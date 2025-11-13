@@ -42,8 +42,8 @@ A complete banking system with REST API backend and modern React frontend, built
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd Banking-System
+git clone https://github.com/swissmarley/banking-system.git
+cd banking-system
 ```
 
 2. Install backend dependencies:
