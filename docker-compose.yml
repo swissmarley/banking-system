@@ -52,8 +52,10 @@ services:
     environment:
       VITE_API_URL: http://backend:8080
       PORT: 3000
+    # The frontend container is an nginx image that serves on port 80 internally.
+    # Map host port 3000 to container port 80 so you can open http://localhost:3000
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     networks:
