@@ -1,0 +1,8 @@
+{
+  "name": "banking-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Banking system backend API"
+}
+
+
