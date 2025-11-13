@@ -13,7 +13,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # Use the same DB user as configured above so pg_isready checks the correct credentials
+      test: ["CMD-SHELL", "pg_isready -U postgres_username"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +28,12 @@ services:
       dockerfile: Dockerfile
     container_name: banking-backend
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bankingsystem
+      # Provide DB connection details used by the backend (backend reads DB_HOST/DB_USER/DB_PASSWORD/etc)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bankingsystem
+      DB_USER: postgres_username
+      DB_PASSWORD: postgres_password
       PORT: 8080
     ports:
       - "8080:8080"
