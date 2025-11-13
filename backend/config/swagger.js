@@ -1,4 +1,9 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve paths relative to this file so swagger works both in local dev and in Docker
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const options = {
   definition: {
@@ -43,7 +48,9 @@ const options = {
       }
     }
   },
-  apis: ['./backend/routes/*.js', './backend/server.js']
+  // Use absolute globs resolved from this config file. This ensures the spec is found
+  // whether the app is run from the repo root or from inside the backend build context.
+  apis: [path.join(__dirname, '..', 'routes', '*.js'), path.join(__dirname, '..', 'server.js')]
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
