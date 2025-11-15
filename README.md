@@ -114,6 +114,11 @@ The frontend will be available at `http://localhost:3000`
 - If you expose the API on a different public domain (for example, `https://api.example.com`), set `FRONTEND_PUBLIC_API_URL` in your `.env` before running `docker-compose build frontend`. The value is forwarded to the `REACT_APP_API_URL` build argument so the React app calls the correct host.
 - `npm audit fix --force` still runs as part of the backend image build to address the node module warnings you observed. Create React App's toolchain cannot be auto-fixed with that flag without uninstalling `react-scripts`, so the frontend Dockerfile only runs `npm install`. The outstanding CRA advisories are documented via `npm audit` output and can be reviewed in the CI logs.
 
+### API Documentation hosts
+
+- The Swagger UI served at `/api-docs` now auto-detects the origin where it is being accessed (so `Try it out` calls hit the same domain/subdomain you used to open the docs).
+- You can provide additional absolute URLs (for example, staging or production domains) via the `SWAGGER_SERVER_URLS` env variable in `.env`. Use a comma-separated list and they will appear in the Servers dropdown inside Swagger UI.
+
 ## API Endpoints
 
 ### Authentication

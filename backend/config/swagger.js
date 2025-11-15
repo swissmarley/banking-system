@@ -2,8 +2,38 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Resolve paths relative to this file so swagger works both in local dev and in Docker
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const buildServerList = () => {
+  const protocol = process.env.USE_SSL === 'true' ? 'https' : 'http';
+  const port = process.env.PORT || 5000;
+  const defaultLocal = `${protocol}://localhost:${port}`;
+  const configuredUrls =
+    process.env.SWAGGER_SERVER_URLS || process.env.SWAGGER_SERVER_URL || '';
+
+  const servers = [
+    {
+      url: '/',
+      description: 'Current host (auto-detected)'
+    }
+  ];
+
+  const addServer = (url, description) => {
+    if (url && !servers.some((server) => server.url === url)) {
+      servers.push({ url, description });
+    }
+  };
+
+  addServer(defaultLocal, 'Local development');
+
+  configuredUrls
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .forEach((url, idx) => addServer(url, `Configured server ${idx + 1}`));
+
+  return servers;
+};
 
 const options = {
   definition: {
@@ -31,12 +61,7 @@ const options = {
         name: 'API Support'
       }
     },
-    servers: [
-      {
-        url: 'https://localhost:5000',
-        description: 'Development server'
-      }
-    ],
+    servers: buildServerList(),
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -48,11 +73,7 @@ const options = {
       }
     }
   },
-  // Use absolute globs resolved from this config file. This ensures the spec is found
-  // whether the app is run from the repo root or from inside the backend build context.
   apis: [path.join(__dirname, '..', 'routes', '*.js'), path.join(__dirname, '..', 'server.js')]
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
-
-

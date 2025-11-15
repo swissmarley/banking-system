@@ -33,6 +33,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 
+// Root metadata
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Banking System API is running',
+    docs: '/api-docs',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -97,5 +107,4 @@ process.on('SIGINT', async () => {
 });
 
 startServer();
-
 
