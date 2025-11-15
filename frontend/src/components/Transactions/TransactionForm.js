@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../lib/apiClient';
 import { useNavigate } from 'react-router-dom';
 import './TransactionForm.css';
 
@@ -23,7 +23,7 @@ const TransactionForm = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await axios.get('/api/accounts');
+      const response = await apiClient.get('/api/accounts');
       setAccounts(response.data);
     } catch (err) {
       setError('Failed to load accounts');
@@ -40,17 +40,17 @@ const TransactionForm = () => {
       const amount = parseFloat(formData.amount);
 
       if (formData.type === 'deposit') {
-        await axios.post('/api/transactions/deposit', {
+        await apiClient.post('/api/transactions/deposit', {
           account_id: parseInt(formData.account_id),
           amount
         });
       } else if (formData.type === 'withdrawal') {
-        await axios.post('/api/transactions/withdraw', {
+        await apiClient.post('/api/transactions/withdraw', {
           account_id: parseInt(formData.account_id),
           amount
         });
       } else if (formData.type === 'transfer') {
-        await axios.post('/api/transactions/transfer', {
+        await apiClient.post('/api/transactions/transfer', {
           from_account_id: parseInt(formData.from_account_id),
           to_account_id: parseInt(formData.to_account_id),
           amount
@@ -214,5 +214,4 @@ const TransactionForm = () => {
 };
 
 export default TransactionForm;
-
 

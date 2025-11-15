@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../lib/apiClient';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -16,8 +16,8 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const [accountsRes, transactionsRes] = await Promise.all([
-        axios.get('/api/accounts'),
-        axios.get('/api/transactions?limit=10')
+        apiClient.get('/api/accounts'),
+        apiClient.get('/api/transactions?limit=10')
       ]);
       setAccounts(accountsRes.data);
       setTransactions(transactionsRes.data.transactions || []);

@@ -108,6 +108,11 @@ npm run client
 
 The frontend will be available at `http://localhost:3000`
 
+### Frontend API access
+
+- The production build is served through Nginx (see `frontend/nginx/default.conf`), which now proxies `/api` and `/api-docs` back to the backend container and rewrites SPA routes to `index.html`. This removes the blank-page issue when accessing `/dashboard` or other client routes directly and keeps API calls on the same origin to avoid CORS errors.
+- If you expose the API on a different public domain (for example, `https://api.example.com`), set `FRONTEND_PUBLIC_API_URL` in your `.env` before running `docker-compose build frontend`. The value is forwarded to the `REACT_APP_API_URL` build argument so the React app calls the correct host.
+
 ## API Endpoints
 
 ### Authentication

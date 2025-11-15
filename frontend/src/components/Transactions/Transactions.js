@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import apiClient from '../../lib/apiClient';
 import './Transactions.css';
 
 const Transactions = () => {
@@ -24,7 +24,7 @@ const Transactions = () => {
         ...(filters.endDate && { endDate: filters.endDate })
       };
 
-      const response = await axios.get('/api/transactions', { params });
+      const response = await apiClient.get('/api/transactions', { params });
       setTransactions(response.data.transactions || []);
       setPagination(prev => response.data.pagination || prev);
       setError('');
@@ -181,5 +181,4 @@ const Transactions = () => {
 };
 
 export default Transactions;
-
 

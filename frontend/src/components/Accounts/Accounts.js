@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../lib/apiClient';
 import './Accounts.css';
 
 const Accounts = () => {
@@ -17,7 +17,7 @@ const Accounts = () => {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/accounts');
+      const response = await apiClient.get('/api/accounts');
       setAccounts(response.data);
       setError('');
     } catch (err) {
@@ -32,7 +32,7 @@ const Accounts = () => {
     e.preventDefault();
     try {
       setError('');
-      const response = await axios.post('/api/accounts', formData);
+      const response = await apiClient.post('/api/accounts', formData);
       setAccounts([...accounts, response.data]);
       setSuccess('Account created successfully!');
       setShowForm(false);
@@ -49,7 +49,7 @@ const Accounts = () => {
     }
 
     try {
-      await axios.delete(`/api/accounts/${id}`);
+      await apiClient.delete(`/api/accounts/${id}`);
       setAccounts(accounts.filter(acc => acc.id !== id));
       setSuccess('Account deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);

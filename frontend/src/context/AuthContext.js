@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import apiClient, { setAuthToken as setApiAuthToken } from '../lib/apiClient';
 import * as OTPAuth from 'otpauth';
 
 const AuthContext = createContext();
@@ -109,12 +109,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await axios.get('/api/auth/me');
+      const response = await apiClient.get('/api/auth/me');
       setUser(response.data);
     } catch (error) {
       localStorage.removeItem('token');
       setToken(null);
-      delete axios.defaults.headers.common['Authorization'];
+      setApiAuthToken(null);
     } finally {
       setLoading(false);
     }
@@ -122,10 +122,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setApiAuthToken(token);
       fetchUser();
     } else {
       setLoading(false);
+      setApiAuthToken(null);
     }
   }, [token, fetchUser]);
 
@@ -141,7 +142,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.setItem('token', pendingToken);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${pendingToken}`;
+    setApiAuthToken(pendingToken);
     setToken(pendingToken);
     setUser(pendingUser);
     setPendingToken(null);
@@ -170,7 +171,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await apiClient.post('/api/auth/login', { email, password });
       const { token: newToken, user: userData } = response.data;
 
       const existingSecret = getSecretForUser(userData.id);
@@ -191,7 +192,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await apiClient.post('/api/auth/register', {
         username,
         email,
         password
@@ -264,7 +265,7 @@ export const AuthProvider = ({ children }) => {
     setPendingToken(null);
     setPendingUser(null);
     setTwoFactorState(defaultTwoFactorState);
-    delete axios.defaults.headers.common['Authorization'];
+    setApiAuthToken(null);
   };
 
   const value = {
