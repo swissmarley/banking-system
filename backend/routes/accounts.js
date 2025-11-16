@@ -1,5 +1,6 @@
 import express from 'express';
 import { Account } from '../models/Account.js';
+import { Transaction } from '../models/Transaction.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { accountValidation } from '../middleware/validation.js';
 
@@ -130,13 +131,51 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     
-    if (parseFloat(account.balance) > 0) {
-      return res.status(400).json({ error: 'Cannot delete account with balance' });
+    const accountBalance = parseFloat(account.balance);
+    const transferAccountId =
+      req.body?.transfer_account_id || req.query?.transfer_account_id || null;
+
+    if (accountBalance > 0) {
+      if (!transferAccountId) {
+        return res.status(400).json({
+          error:
+            'Account has a remaining balance. Provide transfer_account_id to move funds before deletion.'
+        });
+      }
+
+      if (parseInt(transferAccountId) === parseInt(account.id)) {
+        return res.status(400).json({ error: 'Cannot transfer funds to the same account' });
+      }
+
+      const destinationAccount = await Account.findById(transferAccountId);
+      if (!destinationAccount || destinationAccount.user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Destination account not found or inaccessible' });
+      }
+
+      const destinationNewBalance =
+        parseFloat(destinationAccount.balance) + parseFloat(accountBalance);
+      await Account.updateBalance(destinationAccount.id, destinationNewBalance);
+      await Account.updateBalance(account.id, 0);
+
+      await Transaction.create(
+        account.id,
+        destinationAccount.id,
+        accountBalance,
+        'transfer',
+        'completed',
+        {
+          reference: 'Balance transfer before account closure'
+        }
+      );
     }
     
     const deleted = await Account.delete(req.params.id);
     if (deleted) {
-      res.json({ message: 'Account deleted successfully' });
+      res.json({
+        message: 'Account deleted successfully',
+        transferred_amount: accountBalance > 0 ? accountBalance : 0,
+        transfer_account_id: transferAccountId || null
+      });
     } else {
       res.status(500).json({ error: 'Failed to delete account' });
     }

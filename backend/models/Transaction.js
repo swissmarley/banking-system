@@ -2,17 +2,54 @@ import { getPool } from '../config/database.js';
 import { decryptAccountNumber } from '../utils/accountNumbers.js';
 
 export class Transaction {
-  static async create(fromAccountId, toAccountId, amount, type, status = 'completed') {
+  static async create(
+    fromAccountId,
+    toAccountId,
+    amount,
+    type,
+    status = 'completed',
+    options = {}
+  ) {
     const pool = getPool();
+
+    if (type === 'deposit' && !options.external_from_name) {
+      options.external_from_name = 'CASH IN';
+    }
+    if (type === 'withdrawal' && !options.external_to_name) {
+      options.external_to_name = 'CASH OUT';
+    }
     
     const result = await pool.query(
-      `INSERT INTO transactions (from_account_id, to_account_id, amount, type, status, timestamp)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       RETURNING id, from_account_id, to_account_id, amount, type, status, timestamp`,
-      [fromAccountId, toAccountId, amount, type, status]
+      `INSERT INTO transactions (
+        from_account_id,
+        to_account_id,
+        amount,
+        type,
+        status,
+        timestamp,
+        external_from_name,
+        external_from_iban,
+        external_to_name,
+        external_to_iban,
+        reference
+      )
+       VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        fromAccountId,
+        toAccountId,
+        amount,
+        type,
+        status,
+        options.external_from_name || null,
+        options.external_from_iban || null,
+        options.external_to_name || null,
+        options.external_to_iban || null,
+        options.reference || null
+      ]
     );
     
-    return result.rows[0];
+    return mapTransactionRow(result.rows[0]);
   }
 
   static async findByAccountId(accountId, filters = {}) {
@@ -180,11 +217,28 @@ const mapTransactionRow = (row) => {
     return row;
   }
 
+  const fromAccount = row.from_account_number
+    ? decryptAccountNumber(row.from_account_number)
+    : null;
+  const toAccount = row.to_account_number ? decryptAccountNumber(row.to_account_number) : null;
+
+  const fromDisplay =
+    fromAccount ||
+    row.external_from_name ||
+    (row.type === 'deposit' ? 'CASH IN' : null) ||
+    (row.type === 'external_incoming' ? row.external_from_name : null);
+
+  const toDisplay =
+    toAccount ||
+    row.external_to_name ||
+    (row.type === 'withdrawal' ? 'CASH OUT' : null) ||
+    (row.type === 'external_outgoing' ? row.external_to_name : null);
+
   return {
     ...row,
-    from_account_number: row.from_account_number
-      ? decryptAccountNumber(row.from_account_number)
-      : null,
-    to_account_number: row.to_account_number ? decryptAccountNumber(row.to_account_number) : null
+    from_account_number: fromAccount,
+    to_account_number: toAccount,
+    from_display: fromDisplay,
+    to_display: toDisplay
   };
 };

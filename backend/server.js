@@ -13,6 +13,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/accounts.js';
 import transactionRoutes from './routes/transactions.js';
+import scheduledPaymentRoutes from './routes/scheduledPayments.js';
 import { sanitizeRequest } from './middleware/sanitize.js';
 
 dotenv.config();
@@ -52,6 +53,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/scheduled-payments', scheduledPaymentRoutes);
 
 // Root metadata
 app.get('/', (req, res) => {

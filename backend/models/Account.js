@@ -3,7 +3,11 @@ import { getPool } from '../config/database.js';
 import {
   decryptAccountNumber,
   encryptAccountNumber,
-  hashAccountNumber
+  hashAccountNumber,
+  encryptIban,
+  decryptIban,
+  hashIban,
+  generateIban
 } from '../utils/accountNumbers.js';
 
 export class Account {
@@ -12,12 +16,15 @@ export class Account {
     const accountNumber = this.generateAccountNumber();
     const encryptedAccountNumber = encryptAccountNumber(accountNumber);
     const hashedAccountNumber = hashAccountNumber(accountNumber);
+    const plainIban = generateIban(accountNumber);
+    const encryptedIban = encryptIban(plainIban);
+    const hashedIban = hashIban(plainIban);
     
     const result = await pool.query(
-      `INSERT INTO accounts (user_id, account_number, account_number_hash, balance, account_type, created_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       RETURNING id, user_id, account_number, balance, account_type, created_at`,
-      [userId, encryptedAccountNumber, hashedAccountNumber, 0.00, accountType]
+      `INSERT INTO accounts (user_id, account_number, account_number_hash, iban, iban_hash, balance, account_type, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+       RETURNING id, user_id, account_number, iban, balance, account_type, created_at`,
+      [userId, encryptedAccountNumber, hashedAccountNumber, encryptedIban, hashedIban, 0.0, accountType]
     );
     
     return this.deserializeAccount(result.rows[0]);
@@ -55,6 +62,17 @@ export class Account {
       [hashed]
     );
     
+    return this.deserializeAccount(result.rows[0]);
+  }
+
+  static async findByIban(iban) {
+    const pool = getPool();
+    const hashed = hashIban(iban);
+    if (!hashed) {
+      return null;
+    }
+
+    const result = await pool.query('SELECT * FROM accounts WHERE iban_hash = $1', [hashed]);
     return this.deserializeAccount(result.rows[0]);
   }
 
@@ -110,7 +128,8 @@ export class Account {
 
     return {
       ...row,
-      account_number: decryptAccountNumber(row.account_number)
+      account_number: decryptAccountNumber(row.account_number),
+      iban: row.iban ? decryptIban(row.iban) : null
     };
   }
 }

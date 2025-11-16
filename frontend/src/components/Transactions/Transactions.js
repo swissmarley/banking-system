@@ -123,8 +123,9 @@ const Transactions = () => {
                   <th>ID</th>
                   <th>Type</th>
                   <th>Amount</th>
-                  <th>From Account</th>
-                  <th>To Account</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Reference</th>
                   <th>Date</th>
                   <th>Status</th>
                 </tr>
@@ -139,8 +140,9 @@ const Transactions = () => {
                       </span>
                     </td>
                     <td className="amount">${parseFloat(transaction.amount).toFixed(2)}</td>
-                    <td>{transaction.from_account_number || 'N/A'}</td>
-                    <td>{transaction.to_account_number || 'N/A'}</td>
+                    <td>{transaction.from_display || transaction.from_account_number || 'N/A'}</td>
+                    <td>{transaction.to_display || transaction.to_account_number || 'N/A'}</td>
+                    <td>{transaction.reference || '—'}</td>
                     <td>{new Date(transaction.timestamp).toLocaleString()}</td>
                     <td>
                       <span className={`status ${transaction.status}`}>
@@ -181,4 +183,3 @@ const Transactions = () => {
 };
 
 export default Transactions;
-

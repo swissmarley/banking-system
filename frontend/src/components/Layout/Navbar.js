@@ -32,6 +32,12 @@ const Navbar = () => {
             <Link to="/transfer" className="navbar-link">
               Transfer
             </Link>
+            <Link to="/payments" className="navbar-link">
+              Payments
+            </Link>
+            <Link to="/bills" className="navbar-link">
+              Orders & Bills
+            </Link>
             <div className="navbar-user">
               <span>{user.username}</span>
               <button onClick={handleLogout} className="logout-btn">
