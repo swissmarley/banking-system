@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import TwoFactorChallenge from './TwoFactorChallenge';
 import './Auth.css';
 
 const passwordRequirements = [
@@ -16,18 +17,18 @@ const passwordRequirements = [
 ];
 
 const Register = () => {
+  const { register, user, authError, twoFactorState, cancelTwoFactorFlow } = useAuth();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { register, user, authError } = useAuth();
+  const [status, setStatus] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && twoFactorState.status === 'idle') {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, twoFactorState.status, navigate]);
 
   useEffect(() => {
     if (authError) {
@@ -35,7 +36,7 @@ const Register = () => {
     }
   }, [authError]);
 
-  const possession = useMemo(
+  const requirementStatuses = useMemo(
     () =>
       passwordRequirements.map((requirement) => ({
         ...requirement,
@@ -52,7 +53,7 @@ const Register = () => {
     event.preventDefault();
     setStatus(null);
 
-    if (possession.some((req) => !req.satisfied)) {
+    if (requirementStatuses.some((req) => !req.satisfied)) {
       setStatus({ type: 'error', message: 'Please meet all password requirements.' });
       return;
     }
@@ -61,9 +62,11 @@ const Register = () => {
     const result = await register(form.username, form.email, form.password);
     setSubmitting(false);
 
-    if (result.success) {
+    if (result.success && result.stage === 'authenticated') {
       setStatus({ type: 'success', message: 'Account created! Redirecting…' });
       navigate('/dashboard');
+    } else if (result.success) {
+      setStatus({ type: 'info', message: 'Complete two-factor setup to finalize registration.' });
     } else {
       setStatus({
         type: 'error',
@@ -71,6 +74,13 @@ const Register = () => {
       });
     }
   };
+
+  const handleCancel = () => {
+    cancelTwoFactorFlow();
+    setStatus(null);
+  };
+
+  const twoFactorActive = twoFactorState.status !== 'idle';
 
   return (
     <div className="auth-shell">
@@ -81,8 +91,8 @@ const Register = () => {
             Create a <span>JWT-powered</span> profile
           </h1>
           <p className="subtitle">
-            Provision a digital bank account, issue IBANs instantly, and manage transfers through a
-            single secure workspace.
+            Provision a digital bank account, issue IBANs instantly, and secure it with two-factor
+            authentication.
           </p>
           <ul className="auth-highlights">
             <li>Unlimited accounts per organization</li>
@@ -92,77 +102,80 @@ const Register = () => {
         </div>
 
         <div className="auth-panel__form">
-          <div className="auth-card">
+          <div className={`auth-card${twoFactorActive ? ' two-factor-active' : ''}`}>
             <h2>Create account</h2>
             {status?.message && (
               <div className={`auth-banner ${status.type}`}>{status.message}</div>
             )}
-            <form onSubmit={handleSubmit} className="auth-form">
-              <label className="floating-label">
-                <span>Username</span>
-                <input
-                  type="text"
-                  name="username"
-                  value={form.username}
-                  onChange={handleChange}
-                  required
-                  minLength={3}
-                  disabled={submitting}
-                  placeholder="jane.doe"
-                />
-              </label>
-              <label className="floating-label">
-                <span>Email</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  disabled={submitting}
-                  placeholder="you@email.com"
-                />
-              </label>
-              <label className="floating-label">
-                <span>Password</span>
-                <div className="password-field">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                    minLength={8}
-                    disabled={submitting}
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </label>
-              <div className="password-meter">
-                {possession.map((req) => (
-                  <span
-                    key={req.id}
-                    className={`password-pill ${req.satisfied ? 'pass' : 'fail'}`}
-                  >
-                    {req.label}
-                  </span>
-                ))}
-              </div>
+            {twoFactorActive ? (
+              <TwoFactorChallenge onCancel={handleCancel} />
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="auth-form">
+                  <label className="floating-label">
+                    <span>Username</span>
+                    <input
+                      type="text"
+                      name="username"
+                      value={form.username}
+                      onChange={handleChange}
+                      placeholder="jane.doe"
+                      required
+                      minLength={3}
+                      disabled={submitting}
+                    />
+                  </label>
+                  <label className="floating-label">
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="you@email.com"
+                      required
+                      disabled={submitting}
+                    />
+                  </label>
+                  <label className="floating-label">
+                    <span>Password</span>
+                    <div className="password-field">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={form.password}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        required
+                        minLength={8}
+                        disabled={submitting}
+                      />
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        {showPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </label>
+                  <div className="password-meter">
+                    {requirementStatuses.map((req) => (
+                      <span key={req.id} className={`password-pill ${req.satisfied ? 'pass' : 'fail'}`}>
+                        {req.label}
+                      </span>
+                    ))}
+                  </div>
 
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? 'Creating profile…' : 'Register & issue token'}
-              </button>
-            </form>
-            <p className="auth-link">
-              Already registered? <Link to="/login">Back to login</Link>
-            </p>
+                  <button type="submit" className="btn-primary" disabled={submitting}>
+                    {submitting ? 'Creating profile…' : 'Register & issue token'}
+                  </button>
+                </form>
+                <p className="auth-link">
+                  Already registered? <Link to="/login">Login here</Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
