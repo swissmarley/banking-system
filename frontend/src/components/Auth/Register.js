@@ -16,13 +16,9 @@ const passwordRequirements = [
 ];
 
 const Register = () => {
-  const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: ''
-  });
-  const [status, setStatus] = useState(null);
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const { register, user, authError } = useAuth();
   const navigate = useNavigate();
@@ -39,7 +35,7 @@ const Register = () => {
     }
   }, [authError]);
 
-  const requirementStatuses = useMemo(
+  const possession = useMemo(
     () =>
       passwordRequirements.map((requirement) => ({
         ...requirement,
@@ -48,17 +44,15 @@ const Register = () => {
     [form.password]
   );
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = ({ target }) => {
+    setForm((prev) => ({ ...prev, [target.name]: target.value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setStatus(null);
 
-    const hasError = requirementStatuses.some((req) => !req.satisfied);
-    if (hasError) {
+    if (possession.some((req) => !req.satisfied)) {
       setStatus({ type: 'error', message: 'Please meet all password requirements.' });
       return;
     }
@@ -111,10 +105,10 @@ const Register = () => {
                   name="username"
                   value={form.username}
                   onChange={handleChange}
-                  placeholder="jane.doe"
                   required
                   minLength={3}
                   disabled={submitting}
+                  placeholder="jane.doe"
                 />
               </label>
               <label className="floating-label">
@@ -124,9 +118,9 @@ const Register = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="you@email.com"
                   required
                   disabled={submitting}
+                  placeholder="you@email.com"
                 />
               </label>
               <label className="floating-label">
@@ -137,10 +131,10 @@ const Register = () => {
                     name="password"
                     value={form.password}
                     onChange={handleChange}
-                    placeholder="••••••••"
                     required
                     minLength={8}
                     disabled={submitting}
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -152,7 +146,7 @@ const Register = () => {
                 </div>
               </label>
               <div className="password-meter">
-                {requirementStatuses.map((req) => (
+                {possession.map((req) => (
                   <span
                     key={req.id}
                     className={`password-pill ${req.satisfied ? 'pass' : 'fail'}`}

@@ -9,11 +9,15 @@ A complete banking system with REST API backend and modern React frontend, built
 - JWT-based authentication
 - Account management (create, view, delete)
 - Transaction processing (deposits, withdrawals, transfers)
+- IBAN generation/encryption for every account
+- External payment APIs (incoming/outgoing) with API-key security
 - Transaction history with filtering and pagination
 - Balance inquiries
 - Input validation and error handling
 - Request logging and rate limiting
+- Encrypted storage for access tokens, 2FA secrets, and account numbers
 - Swagger/OpenAPI documentation
+- Scheduled payments (orders/bills) endpoints
 
 ### Frontend
 - Modern, responsive React application
@@ -21,6 +25,7 @@ A complete banking system with REST API backend and modern React frontend, built
 - Dashboard with account overview
 - Account management interface
 - Transaction form for deposits, withdrawals, and transfers
+- Dedicated pages for external payments and scheduled bills
 - Transaction history with search and filters
 - Mobile-responsive design
 
@@ -67,17 +72,15 @@ cd ..
 
 5. Configure environment variables:
    
-   Create a `.env` file in the root directory:
-   ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=bankingsystem
-   DB_USER=postgres
-   DB_PASSWORD=postgres
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   PORT=5000
-   NODE_ENV=development
-   ```
+   Copy `.env.example` to `.env` and adjust the values for your environment. At a minimum you must set:
+   - `JWT_SECRET` and `DATA_ENCRYPTION_KEY` (used for signing tokens and encrypting secrets/account numbers)
+   - `CORS_ORIGINS` matching the frontend origin so browsers can call the API without CORS errors
+   - `EXTERNAL_PAYMENTS_API_KEY` to authorize inbound API payment calls
+   - Database credentials (`DB_HOST`, `DB_USER`, etc.)
+
+   > **Docker Compose note:** the backend container automatically loads the root `.env` file via `env_file`. If
+   > `JWT_SECRET` or `DATA_ENCRYPTION_KEY` are missing, the container will repeatedly crash on start because the
+   > encryption key cannot be derived. Always ensure the `.env` file exists before running `docker compose up`.
 
 6. Run database migrations:
 ```bash
@@ -113,6 +116,21 @@ The frontend will be available at `http://localhost:3000`
 - The production build is served through Nginx (see `frontend/nginx/default.conf`), which now proxies `/api` and `/api-docs` back to the backend container and rewrites SPA routes to `index.html`.
 - If you expose the API on a different public domain (for example, `https://api.example.com`), set `FRONTEND_PUBLIC_API_URL` in your `.env` before running `docker-compose build frontend`. The value is forwarded to the `REACT_APP_API_URL` build argument so the React app calls the correct host.
 
+### External Payment API
+
+Third parties can credit accounts by calling `POST /api/transactions/external/incoming` with the header `X-External-API-Key: <EXTERNAL_PAYMENTS_API_KEY>` and payload:
+
+```json
+{
+  "iban": "IBANXXXX",
+  "sender_name": "Acme Corp",
+  "amount": 1250.00,
+  "reference": "Invoice 456"
+}
+```
+
+Clients should store their API key securely; the endpoint is rejected if the key is missing or mismatched.
+
 ### API Documentation hosts
 
 - The Swagger UI served at `/api-docs` now auto-detects the origin where it is being accessed (so `Try it out` calls hit the same domain/subdomain you used to open the docs).
@@ -137,7 +155,14 @@ The frontend will be available at `http://localhost:3000`
 - `POST /api/transactions/deposit` - Deposit money
 - `POST /api/transactions/withdraw` - Withdraw money
 - `POST /api/transactions/transfer` - Transfer money
+- `POST /api/transactions/external/incoming` - Record an incoming payment via IBAN (API key)
+- `POST /api/transactions/external/outgoing` - Send funds to an external IBAN
 - `GET /api/transactions/balance/:account_id` - Get account balance
+
+### Scheduled Payments
+- `GET /api/scheduled-payments` - List scheduled orders/bills
+- `POST /api/scheduled-payments` - Create a scheduled payment
+- `DELETE /api/scheduled-payments/:id` - Cancel a scheduled payment
 
 ## CLI Commands
 
@@ -192,7 +217,10 @@ node backend/cli.js history -u 1
 ### Accounts Table
 - `id` (SERIAL, Primary Key)
 - `user_id` (INTEGER, Foreign Key)
-- `account_number` (VARCHAR(50), Unique)
+- `account_number` (TEXT, AES-GCM encrypted)
+- `account_number_hash` (VARCHAR(128), Unique deterministic hash for lookups)
+- `iban` (TEXT, AES-GCM encrypted)
+- `iban_hash` (VARCHAR(128), Unique deterministic hash for lookups)
 - `balance` (DECIMAL(18,2))
 - `account_type` (VARCHAR(20))
 - `created_at` (TIMESTAMP)
@@ -205,6 +233,21 @@ node backend/cli.js history -u 1
 - `type` (VARCHAR(20))
 - `status` (VARCHAR(20))
 - `timestamp` (TIMESTAMP)
+- `external_from_name` / `external_to_name`
+- `external_from_iban` / `external_to_iban`
+- `reference` (TEXT)
+
+### Scheduled Payments Table
+- `id` (SERIAL, Primary Key)
+- `user_id`, `account_id` (Foreign Keys)
+- `payee_name`
+- `payee_iban` (encrypted) + hash
+- `amount`
+- `frequency`
+- `start_date` / `next_run`
+- `notes`
+- `status`
+- `created_at`, `updated_at`
 
 ## Test Accounts
 

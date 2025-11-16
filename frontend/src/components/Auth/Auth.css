@@ -117,7 +117,9 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.floating-label input {
+.floating-label input,
+.floating-label textarea,
+.floating-label select {
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(12, 18, 35, 0.8);
@@ -127,18 +129,12 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.floating-label input:focus {
+.floating-label input:focus,
+.floating-label select:focus,
+.floating-label textarea:focus {
   outline: none;
   border-color: #5ad8ff;
   box-shadow: 0 0 0 2px rgba(90, 216, 255, 0.2);
-}
-
-.floating-label select {
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(12, 18, 35, 0.8);
-  padding: 0.85rem 1rem;
-  color: #f7f8fd;
 }
 
 .password-field {
@@ -155,22 +151,44 @@
   background: transparent;
   flex: 1;
   padding: 0.9rem 1.1rem;
+  color: inherit;
 }
 
-.auth-link {
-  margin-top: 1.25rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.auth-link a {
+.ghost-button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
   color: #5ad8ff;
   font-weight: 600;
-  text-decoration: none;
+  border-radius: 12px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
 }
 
-.auth-link a:hover {
-  text-decoration: underline;
+.ghost-button:hover {
+  border-color: rgba(90, 216, 255, 0.6);
+  color: #9be6ff;
+}
+
+.btn-primary {
+  background: linear-gradient(120deg, #5ad3a2, #5ad8ff);
+  color: #051023;
+  border: none;
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 35px rgba(90, 216, 255, 0.35);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .password-meter {
@@ -197,6 +215,22 @@
   color: #ffc7d0;
 }
 
+.auth-link {
+  margin-top: 1.25rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.auth-link a {
+  color: #5ad8ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .auth-shell {
     padding: 1rem;
@@ -205,10 +239,6 @@
   .auth-panel {
     border-radius: 24px;
     padding: 1.75rem;
-  }
-
-  .auth-panel__intro {
-    padding-right: 0;
   }
 
   .auth-card {

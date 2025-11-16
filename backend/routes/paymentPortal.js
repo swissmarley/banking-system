@@ -28,14 +28,6 @@ const buildViewModel = (overrides = {}) => ({
 
 const renderTemplate = (model) => {
   const { form, errors, success, recentAccount } = model;
-  const requiredParams = [
-    { label: 'Sender full name', tip: 'Needed for compliance and tracing obligations.' },
-    { label: 'Contact email', tip: 'Used to send the payment receipt.' },
-    { label: 'Destination IBAN', tip: 'Must exist inside this banking system.' },
-    { label: 'Amount', tip: 'Minimum 0.01 in your account currency.' },
-    { label: 'Payment reference', tip: 'Optional description for the account owner.' }
-  ];
-
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -44,225 +36,178 @@ const renderTemplate = (model) => {
     <title>Send Payment | Banking System</title>
     <style>
       :root {
-        color-scheme: light dark;
-        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-        --bg: #0b1320;
-        --card: rgba(14, 22, 39, 0.85);
-        --accent: #5ad8ff;
-        --accent-strong: #3d8bff;
-        --text: #f7f9ff;
-        --muted: rgba(247, 249, 255, 0.7);
-        --danger: #ff6b81;
-        --success: #5ad3a2;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        color: #fff;
+        background: #050914;
       }
       body {
-        margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at top, #13203d, #05070c 65%);
-        color: var(--text);
+        margin: 0;
+        padding: 2rem;
+        background: radial-gradient(circle at top, #131b36, #04040a 70%);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
       }
       .portal {
         width: min(960px, 100%);
-        background: var(--card);
+        background: rgba(14, 20, 42, 0.95);
         border-radius: 24px;
         padding: 2.5rem;
-        box-shadow: 0 40px 80px rgba(0,0,0,0.45);
-        backdrop-filter: blur(20px);
+        box-shadow: 0 40px 90px rgba(0, 0, 0, 0.5);
       }
-      h1 {
-        margin: 0 0 0.5rem;
+      .portal header {
+        margin-bottom: 1rem;
+      }
+      .portal h1 {
+        margin: 0;
         font-size: clamp(2rem, 3vw, 2.6rem);
       }
-      p.lead {
-        margin: 0 0 1.5rem;
-        color: var(--muted);
+      .portal .lead {
+        color: rgba(255, 255, 255, 0.65);
+        margin-top: 0.5rem;
       }
-      form {
+      .portal form {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-      }
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
       }
       label {
-        font-weight: 600;
-        letter-spacing: 0.02em;
+        display: flex;
+        flex-direction: column;
+        color: rgba(255, 255, 255, 0.8);
+        gap: 0.35rem;
       }
-      input, textarea {
-        border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.15);
-        padding: 0.95rem 1.1rem;
+      input,
+      textarea,
+      select {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.85rem 1rem;
         font-size: 1rem;
-        color: var(--text);
-        background: rgba(255,255,255,0.04);
-        transition: border-color 0.2s, box-shadow 0.2s;
-      }
-      input:focus, textarea:focus {
-        border-color: var(--accent);
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(90, 216, 255, 0.25);
+        background: rgba(255, 255, 255, 0.03);
+        color: #fff;
       }
       textarea {
-        resize: vertical;
         min-height: 110px;
-      }
-      .full-width {
-        grid-column: 1 / -1;
+        resize: vertical;
       }
       .actions {
         grid-column: 1 / -1;
         display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
+        justify-content: space-between;
         align-items: center;
+        gap: 1rem;
       }
       button {
         border: none;
         border-radius: 999px;
-        padding: 0.95rem 2.5rem;
-        font-size: 1.05rem;
+        padding: 0.9rem 2.5rem;
+        font-size: 1rem;
         font-weight: 600;
+        color: #030712;
+        background: linear-gradient(120deg, #5ad8ff, #5ad3a2);
         cursor: pointer;
-        background: linear-gradient(120deg, var(--accent-strong), var(--accent));
-        color: #041222;
-        box-shadow: 0 20px 35px rgba(61, 139, 255, 0.35);
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s;
       }
       button:hover {
         transform: translateY(-1px);
-        box-shadow: 0 25px 40px rgba(61, 139, 255, 0.45);
-      }
-      ul.params {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 2rem;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.75rem;
-      }
-      ul.params li {
-        background: rgba(255,255,255,0.04);
-        border-radius: 14px;
-        padding: 0.85rem 1rem;
-        font-size: 0.95rem;
-        color: var(--muted);
-      }
-      ul.params strong {
-        color: var(--text);
-        display: block;
       }
       .alert {
-        padding: 1rem 1.25rem;
-        border-radius: 14px;
-        margin-bottom: 1.25rem;
+        margin-top: 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
       }
       .alert.error {
-        background: rgba(255,107,129,0.15);
-        border: 1px solid rgba(255,107,129,0.4);
+        background: rgba(255, 107, 129, 0.15);
+        border: 1px solid rgba(255, 107, 129, 0.45);
+        color: #ffd7dd;
       }
       .alert.success {
-        background: rgba(90,211,162,0.15);
-        border: 1px solid rgba(90,211,162,0.45);
+        background: rgba(90, 211, 162, 0.15);
+        border: 1px solid rgba(90, 211, 162, 0.45);
+        color: #d1fff2;
       }
-      .recent-card {
-        margin-top: 1.25rem;
+      .recent {
+        margin-top: 1.5rem;
         padding: 1.25rem;
-        border-radius: 16px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
-      .recent-card dl {
+      .recent dl {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 0.75rem;
         margin: 0;
       }
-      .recent-card dt {
-        font-size: 0.8rem;
-        text-transform: uppercase;
+      .recent dt {
+        font-size: 0.7rem;
         letter-spacing: 0.08em;
-        color: var(--muted);
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.6);
       }
-      .recent-card dd {
-        margin: 0;
-        font-size: 1.15rem;
-        font-weight: 600;
+      .recent dd {
+        margin: 0.2rem 0 0;
+        font-size: 1.05rem;
       }
-      @media (max-width: 768px) {
-        body { padding: 1rem; }
-        .portal { padding: 1.5rem; }
-        form { grid-template-columns: 1fr; }
-        .actions { flex-direction: column; align-items: stretch; }
-        button { width: 100%; }
+      @media (max-width: 640px) {
+        .actions {
+          flex-direction: column;
+        }
       }
     </style>
   </head>
   <body>
     <section class="portal">
       <header>
-        <h1>Instant Payment Portal</h1>
-        <p class="lead">Securely send money from any bank to an internal Banking System account via its IBAN.</p>
+        <h1>External payment portal</h1>
+        <p class="lead">Send funds securely to any IBAN managed inside this banking system.</p>
       </header>
-      <ul class="params">
-        ${requiredParams
-          .map(
-            (param) =>
-              `<li><strong>${param.label}</strong>${param.tip}</li>`
-          )
-          .join('')}
-      </ul>
-      ${errors.length ? `<div class="alert error"><strong>We could not start your payment:</strong><ul>${errors
-        .map((err) => `<li>${escapeHtml(err)}</li>`)
-        .join('')}</ul></div>` : ''}
+      ${errors.length ? `<div class="alert error">${errors.join('<br/>')}</div>` : ''}
       ${success ? `<div class="alert success">${escapeHtml(success)}</div>` : ''}
       <form method="POST" novalidate>
-        <div class="form-group">
-          <label for="senderName">Sender full name *</label>
-          <input id="senderName" name="senderName" required value="${escapeHtml(form.senderName)}" placeholder="Jane Doe" />
-        </div>
-        <div class="form-group">
-          <label for="senderEmail">Contact email *</label>
-          <input id="senderEmail" name="senderEmail" type="email" required value="${escapeHtml(form.senderEmail)}" placeholder="jane.doe@email.com" />
-        </div>
-        <div class="form-group">
-          <label for="iban">Destination IBAN *</label>
-          <input id="iban" name="iban" required value="${escapeHtml(form.iban)}" placeholder="DE89 3704 0044 0532 0130 00" />
-        </div>
-        <div class="form-group">
-          <label for="amount">Amount *</label>
-          <input id="amount" name="amount" type="number" min="0.01" step="0.01" required value="${escapeHtml(form.amount)}" placeholder="150.00" />
-        </div>
-        <div class="form-group full-width">
-          <label for="reference">Payment reference</label>
-          <textarea id="reference" name="reference" placeholder="Let the account owner know what this payment is for.">${escapeHtml(form.reference)}</textarea>
-        </div>
+        <label>
+          Sender full name
+          <input name="senderName" value="${escapeHtml(form.senderName)}" required placeholder="Jane Financial" />
+        </label>
+        <label>
+          Contact email
+          <input type="email" name="senderEmail" value="${escapeHtml(form.senderEmail)}" required placeholder="sender@example.com" />
+        </label>
+        <label>
+          Destination IBAN
+          <input name="iban" value="${escapeHtml(form.iban)}" required placeholder="DE89 3704 0044 0532 0130 00" />
+        </label>
+        <label>
+          Amount
+          <input name="amount" value="${escapeHtml(form.amount)}" required type="number" step="0.01" min="0.01" />
+        </label>
+        <label class="full-width">
+          Payment reference
+          <textarea name="reference" placeholder="Optional note to the recipient">${escapeHtml(form.reference)}</textarea>
+        </label>
         <div class="actions">
-          <button type="submit">Send secure payment</button>
-          <span>Funds post immediately to the matching account.</span>
+          <button type="submit">Send payment</button>
+          <p style="margin:0;color:rgba(255,255,255,0.6);">Payments credit instantly upon confirmation.</p>
         </div>
       </form>
       ${
         recentAccount
-          ? `<div class="recent-card">
-              <strong>Latest transfer summary</strong>
+          ? `<div class="recent">
+              <strong>Latest transfer</strong>
               <dl>
                 <div>
-                  <dt>Destination IBAN</dt>
+                  <dt>IBAN</dt>
                   <dd>${escapeHtml(recentAccount.iban)}</dd>
                 </div>
                 <div>
-                  <dt>Internal account</dt>
+                  <dt>Account</dt>
                   <dd>${escapeHtml(recentAccount.account_number)}</dd>
                 </div>
                 <div>
-                  <dt>Amount received</dt>
+                  <dt>Amount</dt>
                   <dd>$${escapeHtml(recentAccount.amount)}</dd>
                 </div>
                 <div>
@@ -289,7 +234,7 @@ router.post('/', async (req, res) => {
   const trimmedName = senderName?.trim();
   const trimmedEmail = senderEmail?.trim();
   const normalizedIban = iban?.replace(/\s+/g, '').toUpperCase();
-  const rawAmount = Number.parseFloat(amount);
+  const amountValue = parseFloat(amount);
 
   if (!trimmedName) {
     errors.push('Sender name is required.');
@@ -300,10 +245,10 @@ router.post('/', async (req, res) => {
   }
 
   if (!normalizedIban) {
-    errors.push('An IBAN is required to locate the destination account.');
+    errors.push('Destination IBAN is required.');
   }
 
-  if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+  if (!Number.isFinite(amountValue) || amountValue <= 0) {
     errors.push('Amount must be greater than 0.');
   }
 
@@ -311,7 +256,7 @@ router.post('/', async (req, res) => {
   if (!errors.length && normalizedIban) {
     destinationAccount = await Account.findByIban(normalizedIban);
     if (!destinationAccount) {
-      errors.push('We could not find an account with that IBAN.');
+      errors.push('No account with the provided IBAN exists in the system.');
     }
   }
 
@@ -329,35 +274,37 @@ router.post('/', async (req, res) => {
       );
   }
 
-  const newBalance = parseFloat(destinationAccount.balance) + rawAmount;
+  const newBalance = parseFloat(destinationAccount.balance) + amountValue;
   await Account.updateBalance(destinationAccount.id, newBalance);
 
-  const descriptorParts = [
+  const descriptors = [
     `External payment from ${trimmedName}`,
-    trimmedEmail ? `Contact ${trimmedEmail}` : null,
+    trimmedEmail ? `Sender: ${trimmedEmail}` : null,
     reference?.trim() ? `Reference: ${reference.trim()}` : null
   ].filter(Boolean);
 
   await Transaction.create(
     null,
     destinationAccount.id,
-    rawAmount,
+    amountValue,
     'deposit',
     'completed',
-    descriptorParts.join(' | ') || 'External payment portal'
+    {
+      reference: descriptors.join(' | ') || 'External payment portal'
+    }
   );
 
-  return res
+  res
     .status(200)
     .type('html')
     .send(
       renderTemplate(
         buildViewModel({
-          success: 'Payment received! The account owner can already see the funds.',
+          success: 'Payment posted! Funds are now available to the account owner.',
           recentAccount: {
             iban: destinationAccount.iban,
             account_number: destinationAccount.account_number,
-            amount: rawAmount.toFixed(2),
+            amount: amountValue.toFixed(2),
             balance: newBalance.toFixed(2)
           }
         })

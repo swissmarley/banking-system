@@ -1,18 +1,12 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState
-} from 'react';
-import apiClient, { setAuthToken as setApiAuthToken } from '../lib/apiClient';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import apiClient, { setAuthToken } from '../lib/apiClient';
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
@@ -25,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     localStorage.removeItem('token');
-    setApiAuthToken(null);
+    setAuthToken(null);
     setToken(null);
     setUser(null);
     setAuthError(null);
@@ -37,8 +31,8 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    setAuthToken(token);
     try {
-      setApiAuthToken(token);
       const response = await apiClient.get('/api/auth/me');
       setUser(response.data);
     } catch (error) {
@@ -52,11 +46,11 @@ export const AuthProvider = ({ children }) => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
-  const persistSession = (sessionToken, sessionUser) => {
-    localStorage.setItem('token', sessionToken);
-    setApiAuthToken(sessionToken);
-    setToken(sessionToken);
-    setUser(sessionUser);
+  const persistSession = (newToken, newUser) => {
+    localStorage.setItem('token', newToken);
+    setAuthToken(newToken);
+    setToken(newToken);
+    setUser(newUser);
   };
 
   const login = async (email, password) => {
@@ -66,8 +60,7 @@ export const AuthProvider = ({ children }) => {
       persistSession(response.data.token, response.data.user);
       return { success: true };
     } catch (error) {
-      const message =
-        error.response?.data?.error || 'Login failed. Please verify your credentials.';
+      const message = error.response?.data?.error || 'Unable to login with those credentials.';
       setAuthError(message);
       return { success: false, error: message };
     }
@@ -84,8 +77,7 @@ export const AuthProvider = ({ children }) => {
       persistSession(response.data.token, response.data.user);
       return { success: true };
     } catch (error) {
-      const message =
-        error.response?.data?.error || 'Registration failed. Please try again.';
+      const message = error.response?.data?.error || 'Registration failed.';
       setAuthError(message);
       return { success: false, error: message };
     }
@@ -97,12 +89,12 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    token,
     loading,
     authError,
     login,
     register,
-    logout
+    logout,
+    token
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

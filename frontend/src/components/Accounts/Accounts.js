@@ -20,8 +20,8 @@ const Accounts = () => {
       setAccounts(response.data || []);
       setError('');
     } catch (err) {
-      setError('Failed to load accounts');
       console.error(err);
+      setError('Failed to load accounts');
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ const Accounts = () => {
     setModalState({
       account,
       stage: parseFloat(account.balance) > 0 ? 'transfer' : 'confirm',
-      transferTargetId: ''
+      transferAccountId: ''
     });
     setModalMessage('');
   };
@@ -71,8 +71,8 @@ const Accounts = () => {
 
   const handleTransferAndDelete = async () => {
     if (!modalState?.account) return;
-    if (!modalState.transferTargetId) {
-      setModalMessage('Select the destination account to move the remaining balance.');
+    if (!modalState.transferAccountId) {
+      setModalMessage('Select a destination account before transferring funds.');
       return;
     }
 
@@ -81,7 +81,7 @@ const Accounts = () => {
     try {
       await apiClient.post('/api/transactions/transfer', {
         from_account_id: modalState.account.id,
-        to_account_id: Number(modalState.transferTargetId),
+        to_account_id: Number(modalState.transferAccountId),
         amount: parseFloat(modalState.account.balance)
       });
       await fetchAccounts();
@@ -90,7 +90,7 @@ const Accounts = () => {
         stage: 'confirm',
         account: { ...prev.account, balance: 0 }
       }));
-      setModalMessage('Balance transferred! You can safely remove this account now.');
+      setModalMessage('Balance transferred. You can now delete the account.');
     } catch (err) {
       setModalMessage(err.response?.data?.error || 'Unable to transfer remaining funds.');
     } finally {
@@ -184,11 +184,7 @@ const Accounts = () => {
               {account.iban && <p className="muted">IBAN: {account.iban}</p>}
               <small>Opened {new Date(account.created_at).toLocaleDateString()}</small>
               <div className="card-actions">
-                <button
-                  className="ghost-button"
-                  onClick={() => openDeleteModal(account)}
-                  disabled={modalLoading}
-                >
+                <button className="ghost-button" onClick={() => openDeleteModal(account)}>
                   Delete
                 </button>
               </div>
@@ -219,9 +215,9 @@ const Accounts = () => {
                   <label className="floating-label">
                     <span>Select destination account</span>
                     <select
-                      value={modalState.transferTargetId}
+                      value={modalState.transferAccountId}
                       onChange={(e) =>
-                        setModalState((prev) => ({ ...prev, transferTargetId: e.target.value }))
+                        setModalState((prev) => ({ ...prev, transferAccountId: e.target.value }))
                       }
                     >
                       <option value="">Choose account</option>

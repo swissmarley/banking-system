@@ -18,17 +18,17 @@ const TransactionForm = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await apiClient.get('/api/accounts');
+        setAccounts(response.data);
+      } catch (err) {
+        setError('Failed to load accounts');
+      }
+    };
+
     fetchAccounts();
   }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await apiClient.get('/api/accounts');
-      setAccounts(response.data);
-    } catch (err) {
-      setError('Failed to load accounts');
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,29 +65,26 @@ const TransactionForm = () => {
         to_account_id: '',
         amount: ''
       });
-      
       setTimeout(() => {
         navigate('/transactions');
-      }, 2000);
+      }, 1500);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.errors?.[0]?.msg || 
-                          err.message || 
-                          `Failed to process ${formData.type}`;
-      setError(errorMessage);
-      console.error('Transaction error:', err.response?.data || err.message);
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || err.message;
+      setError(errorMessage || `Failed to process ${formData.type}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleTypeChange = (e) => {
+    const type = e.target.value;
     setFormData({
-      ...formData,
-      type: e.target.value,
+      type,
       account_id: '',
       from_account_id: '',
-      to_account_id: ''
+      to_account_id: '',
+      amount: ''
     });
   };
 

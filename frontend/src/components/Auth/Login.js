@@ -4,12 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
 const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState(null);
   const { login, user, authError } = useAuth();
   const navigate = useNavigate();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -23,9 +23,8 @@ const Login = () => {
     }
   }, [authError]);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = ({ target }) => {
+    setForm((prev) => ({ ...prev, [target.name]: target.value }));
   };
 
   const handleSubmit = async (event) => {
@@ -60,7 +59,7 @@ const Login = () => {
             workspace — no extra factors required.
           </p>
           <ul className="auth-highlights">
-            <li>Realtime balances &amp; transfers</li>
+            <li>Realtime balances & transfers</li>
             <li>Biometric-grade encryption at rest</li>
             <li>Granular audit trail for every movement</li>
           </ul>

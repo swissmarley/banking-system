@@ -5,12 +5,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Pie,
-  PieChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
+  Pie,
+  PieChart
 } from 'recharts';
 import apiClient from '../../lib/apiClient';
 import './Dashboard.css';
@@ -54,89 +55,55 @@ const Dashboard = () => {
     [accounts]
   );
 
-  const accountNumbers = useMemo(
-    () => new Set(accounts.map((account) => account.account_number)),
-    [accounts]
-  );
-
   const netTransactions = useMemo(() => {
-    return transactions
-      .map((transaction) => {
-        const amount = parseFloat(transaction.amount);
-        let delta = 0;
-
-        if (transaction.from_account_number && accountNumbers.has(transaction.from_account_number)) {
-          delta -= amount;
-        }
-
-        if (transaction.to_account_number && accountNumbers.has(transaction.to_account_number)) {
-          delta += amount;
-        }
-
-        return {
-          ...transaction,
-          delta
-        };
-      })
-      .filter((item) => item.delta !== 0)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [transactions, accountNumbers]);
-
-  const balanceTrend = useMemo(() => {
-    if (!transactions.length) {
-      return [{ label: 'Today', balance: Number(totalBalance) }];
-    }
-
-    const points = [];
+    const balances = [];
     let running = Number(totalBalance);
-
-    netTransactions.slice(0, 8).forEach((transaction) => {
-      points.push({
-        label: new Date(transaction.timestamp).toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric'
-        }),
-        balance: running
+    transactions
+      .slice(0, 8)
+      .forEach((transaction) => {
+        balances.push({
+          label: new Date(transaction.timestamp).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric'
+          }),
+          balance: running
+        });
+        const delta = transaction.to_account_number ? parseFloat(transaction.amount) : 0;
+        running -= delta;
       });
-      running -= transaction.delta;
-    });
-
-    points.push({ label: 'Earlier', balance: Math.max(running, 0) });
-    return points.reverse();
-  }, [netTransactions, totalBalance, transactions.length]);
+    balances.push({ label: 'Earlier', balance: Math.max(running, 0) });
+    return balances.reverse();
+  }, [transactions, totalBalance]);
 
   const accountDistribution = useMemo(() => {
-    const groups = accounts.reduce((acc, account) => {
+    const groups = {};
+    accounts.forEach((account) => {
       const type = account.account_type;
-      acc[type] = (acc[type] || 0) + parseFloat(account.balance || 0);
-      return acc;
-    }, {});
-
+      groups[type] = (groups[type] || 0) + parseFloat(account.balance || 0);
+    });
     return Object.entries(groups).map(([type, value]) => ({
-      name: type.charAt(0).toUpperCase() + type.slice(1),
+      name: `${type.charAt(0).toUpperCase()}${type.slice(1)}`,
       value: Number(value.toFixed(2))
     }));
   }, [accounts]);
 
-  const activityByType = useMemo(() => {
-    const summary = transactions.reduce(
-      (acc, transaction) => {
-        const key = transaction.type;
-        acc[key] = (acc[key] || 0) + Math.abs(parseFloat(transaction.amount || 0));
-        return acc;
-      },
-      { deposit: 0, withdrawal: 0, transfer: 0 }
-    );
-
-    return Object.entries(summary).map(([type, value]) => ({
-      type,
-      total: Number(value.toFixed(2))
-    }));
-  }, [transactions]);
+  const activityByType = useMemo(
+    () =>
+      ['deposit', 'withdrawal', 'transfer'].map((type) => ({
+        type,
+        total: Number(
+          transactions
+            .filter((transaction) => transaction.type === type)
+            .reduce((acc, transaction) => acc + Math.abs(parseFloat(transaction.amount || 0)), 0)
+            .toFixed(2)
+        )
+      })),
+    [transactions]
+  );
 
   const topAccount = useMemo(() => {
     if (!accounts.length) return null;
-    return [...accounts].sort((a, b) => b.balance - a.balance)[0];
+    return [...accounts].sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance))[0];
   }, [accounts]);
 
   if (loading) {
@@ -157,17 +124,19 @@ const Dashboard = () => {
           <p>Top performing account</p>
           {topAccount ? (
             <>
-              <h2>{formatCurrency(Number(topAccount.balance))}</h2>
-              <span>{topAccount.account_type.toUpperCase()} · {topAccount.account_number}</span>
+              <h2>{formatCurrency(parseFloat(topAccount.balance || 0))}</h2>
+              <span>
+                {topAccount.account_type.toUpperCase()} · {topAccount.account_number}
+              </span>
             </>
           ) : (
-            <span>No accounts yet</span>
+            <span>Open an account to get started</span>
           )}
         </article>
         <article className="summary-card">
-          <p>Last 30 days activity</p>
+          <p>Recent activity</p>
           <h2>{transactions.length}</h2>
-          <span>Transactions captured</span>
+          <span>Last 30 entries</span>
         </article>
       </section>
 
@@ -176,11 +145,11 @@ const Dashboard = () => {
           <div className="panel-header">
             <div>
               <h3>Net worth timeline</h3>
-              <p>Trend derived from your latest account movements</p>
+              <p>Balance trend derived from recent entries</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={balanceTrend}>
+            <AreaChart data={netTransactions}>
               <defs>
                 <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#5ad8ff" stopOpacity={0.8} />
@@ -194,13 +163,7 @@ const Dashboard = () => {
                 contentStyle={{ background: '#0b1320', border: '1px solid rgba(255,255,255,0.08)' }}
                 formatter={(value) => formatCurrency(value)}
               />
-              <Area
-                type="monotone"
-                dataKey="balance"
-                stroke="#5ad8ff"
-                fillOpacity={1}
-                fill="url(#balanceGradient)"
-              />
+              <Area type="monotone" dataKey="balance" stroke="#5ad8ff" fill="url(#balanceGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </article>
@@ -209,7 +172,7 @@ const Dashboard = () => {
           <div className="panel-header">
             <div>
               <h3>Account mix</h3>
-              <p>Distribution of balances across your products</p>
+              <p>Real-time split of balances</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
@@ -245,7 +208,7 @@ const Dashboard = () => {
           <div className="panel-header">
             <div>
               <h3>Movement intensity</h3>
-              <p>Volume processed per transaction type</p>
+              <p>Volume per transaction type</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
@@ -297,7 +260,7 @@ const Dashboard = () => {
         <div className="panel-header">
           <div>
             <h3>Recent transactions</h3>
-            <p>Latest 10 movements across all of your accounts</p>
+            <p>Latest 10 movements across your accounts</p>
           </div>
         </div>
         {transactions.length === 0 ? (
@@ -312,7 +275,7 @@ const Dashboard = () => {
                   <th>Amount</th>
                   <th>From</th>
                   <th>To</th>
-                  <th>Details</th>
+                  <th>Description</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -323,12 +286,10 @@ const Dashboard = () => {
                     <td>
                       <span className={`tag ${transaction.type}`}>{transaction.type}</span>
                     </td>
-                    <td>{formatCurrency(parseFloat(transaction.amount))}</td>
+                    <td>{formatCurrency(parseFloat(transaction.amount || 0))}</td>
                     <td>{transaction.from_account_number || '—'}</td>
                     <td>{transaction.to_account_number || '—'}</td>
-                    <td className="description-cell">
-                      {transaction.description || '—'}
-                    </td>
+                    <td className="description-cell">{transaction.description || '—'}</td>
                     <td>{new Date(transaction.timestamp).toLocaleString()}</td>
                   </tr>
                 ))}

@@ -13,8 +13,15 @@ const config = {
   password: process.env.DB_PASSWORD || 'postgres',
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 30000
+  connectionTimeoutMillis: 30000,
+  application_name: 'banking-system-api'
 };
+
+if (process.env.DB_SSL === 'true') {
+  config.ssl = {
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+  };
+}
 
 let pool = null;
 

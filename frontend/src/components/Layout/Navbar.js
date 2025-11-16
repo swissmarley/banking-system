@@ -17,7 +17,9 @@ const Navbar = () => {
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/accounts', label: 'Accounts' },
     { to: '/transactions', label: 'Transactions' },
-    { to: '/transfer', label: 'Transfer' }
+    { to: '/transfer', label: 'Transfer' },
+    { to: '/payments', label: 'Payments' },
+    { to: '/bills', label: 'Orders & Bills' }
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);
@@ -70,7 +72,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
-
-

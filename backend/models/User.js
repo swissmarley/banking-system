@@ -9,7 +9,7 @@ export class User {
     const result = await pool.query(
       `INSERT INTO users (username, email, password_hash, created_at)
        VALUES ($1, $2, $3, NOW())
-       RETURNING id, username, email, created_at`,
+       RETURNING id, username, email, created_at, two_factor_enabled`,
       [username, email, hashedPassword]
     );
     
@@ -29,10 +29,21 @@ export class User {
   static async findById(id) {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT id, username, email, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, created_at, two_factor_enabled FROM users WHERE id = $1',
       [id]
     );
     
+    return result.rows[0];
+  }
+
+  static async findByIdWithSensitive(id) {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id, username, email, created_at, two_factor_enabled, two_factor_secret, two_factor_verified_at
+       FROM users WHERE id = $1`,
+      [id]
+    );
+
     return result.rows[0];
   }
 
@@ -53,5 +64,40 @@ export class User {
 
   static async verifyPassword(password, hash) {
     return await bcrypt.compare(password, hash);
+  }
+
+  static async updateTwoFactorSecret(userId, encryptedSecret) {
+    const pool = getPool();
+    await pool.query(
+      `UPDATE users
+       SET two_factor_secret = $1,
+           two_factor_enabled = FALSE,
+           two_factor_verified_at = NULL
+       WHERE id = $2`,
+      [encryptedSecret, userId]
+    );
+  }
+
+  static async markTwoFactorVerified(userId) {
+    const pool = getPool();
+    await pool.query(
+      `UPDATE users
+       SET two_factor_enabled = TRUE,
+           two_factor_verified_at = NOW()
+       WHERE id = $1`,
+      [userId]
+    );
+  }
+
+  static async disableTwoFactor(userId) {
+    const pool = getPool();
+    await pool.query(
+      `UPDATE users
+       SET two_factor_enabled = FALSE,
+           two_factor_secret = NULL,
+           two_factor_verified_at = NULL
+       WHERE id = $1`,
+      [userId]
+    );
   }
 }

@@ -1,0 +1,26 @@
+.payments-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.payments-page .form-card {
+  margin-top: 1.5rem;
+}
+
+.payments-page .form-group {
+  margin-bottom: 1rem;
+}
+
+.payments-page label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.payments-page input,
+.payments-page select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
