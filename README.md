@@ -6,7 +6,7 @@ A complete banking system with REST API backend and modern React frontend, built
 
 ### Backend
 - RESTful API with Express.js
-- Session-based authentication with mandatory TOTP two-factor flows
+- JWT-based authentication
 - Account management (create, view, delete)
 - Transaction processing (deposits, withdrawals, transfers)
 - IBAN generation/encryption for every account
@@ -74,8 +74,7 @@ cd ..
    
    Copy `.env.example` to `.env` and adjust the values for your environment. At a minimum you must set:
    - `JWT_SECRET` and `DATA_ENCRYPTION_KEY` (used for signing tokens and encrypting secrets/account numbers)
-   - `SESSION_TTL_MINUTES` (defaults to 15 minutes per security requirements)
-   - `CORS_ORIGINS` matching the frontend origin so browsers can send the http-only cookies
+   - `CORS_ORIGINS` matching the frontend origin so browsers can call the API without CORS errors
    - `EXTERNAL_PAYMENTS_API_KEY` to authorize inbound API payment calls
    - Database credentials (`DB_HOST`, `DB_USER`, etc.)
 
@@ -144,9 +143,6 @@ Clients should store their API key securely; the endpoint is rejected if the key
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/logout` - Logout user
 - `GET /api/auth/me` - Get current user info
-- `POST /api/auth/two-factor/verify` - Verify OTP code and establish a session
-- `POST /api/auth/two-factor/regenerate` - Rotate a pending two-factor secret
-- `POST /api/auth/two-factor/cancel` - Cancel the current two-factor challenge
 
 ### Accounts
 - `GET /api/accounts` - Get all user accounts
@@ -216,9 +212,6 @@ node backend/cli.js history -u 1
 - `username` (VARCHAR(50), Unique)
 - `email` (VARCHAR(100), Unique)
 - `password_hash` (VARCHAR(255))
-- `two_factor_secret` (TEXT, encrypted TOTP secret, nullable)
-- `two_factor_enabled` (BOOLEAN, default FALSE)
-- `two_factor_verified_at` (TIMESTAMP, nullable)
 - `created_at` (TIMESTAMP)
 
 ### Accounts Table
