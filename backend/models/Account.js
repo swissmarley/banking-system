@@ -1,18 +1,26 @@
+import crypto from 'crypto';
 import { getPool } from '../config/database.js';
+import {
+  decryptAccountNumber,
+  encryptAccountNumber,
+  hashAccountNumber
+} from '../utils/accountNumbers.js';
 
 export class Account {
   static async create(userId, accountType) {
     const pool = getPool();
     const accountNumber = this.generateAccountNumber();
+    const encryptedAccountNumber = encryptAccountNumber(accountNumber);
+    const hashedAccountNumber = hashAccountNumber(accountNumber);
     
     const result = await pool.query(
-      `INSERT INTO accounts (user_id, account_number, balance, account_type, created_at)
-       VALUES ($1, $2, $3, $4, NOW())
+      `INSERT INTO accounts (user_id, account_number, account_number_hash, balance, account_type, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING id, user_id, account_number, balance, account_type, created_at`,
-      [userId, accountNumber, 0.00, accountType]
+      [userId, encryptedAccountNumber, hashedAccountNumber, 0.00, accountType]
     );
     
-    return result.rows[0];
+    return this.deserializeAccount(result.rows[0]);
   }
 
   static async findByUserId(userId) {
@@ -22,7 +30,7 @@ export class Account {
       [userId]
     );
     
-    return result.rows;
+    return result.rows.map((row) => this.deserializeAccount(row));
   }
 
   static async findById(id) {
@@ -32,17 +40,22 @@ export class Account {
       [id]
     );
     
-    return result.rows[0];
+    return this.deserializeAccount(result.rows[0]);
   }
 
   static async findByAccountNumber(accountNumber) {
     const pool = getPool();
+    const hashed = hashAccountNumber(accountNumber);
+    if (!hashed) {
+      return null;
+    }
+
     const result = await pool.query(
-      'SELECT * FROM accounts WHERE account_number = $1',
-      [accountNumber]
+      'SELECT * FROM accounts WHERE account_number_hash = $1',
+      [hashed]
     );
     
-    return result.rows[0];
+    return this.deserializeAccount(result.rows[0]);
   }
 
   static async updateBalance(accountId, newBalance) {
@@ -75,7 +88,7 @@ export class Account {
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
-    return result.rows;
+    return result.rows.map((row) => this.deserializeAccount(row));
   }
 
   static async count() {
@@ -85,6 +98,19 @@ export class Account {
   }
 
   static generateAccountNumber() {
-    return 'ACC' + Date.now().toString() + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const randomBytes = crypto.randomBytes(6).toString('hex').toUpperCase();
+    const timestampFragment = Date.now().toString().slice(-6);
+    return `ACC-${timestampFragment}-${randomBytes}`;
+  }
+
+  static deserializeAccount(row) {
+    if (!row) {
+      return row;
+    }
+
+    return {
+      ...row,
+      account_number: decryptAccountNumber(row.account_number)
+    };
   }
 }

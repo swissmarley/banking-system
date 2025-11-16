@@ -1,4 +1,5 @@
 import { getPool } from '../config/database.js';
+import { decryptAccountNumber } from '../utils/accountNumbers.js';
 
 export class Transaction {
   static async create(fromAccountId, toAccountId, amount, type, status = 'completed') {
@@ -60,7 +61,7 @@ export class Transaction {
     }
     
     const result = await pool.query(query, params);
-    return result.rows;
+    return result.rows.map(mapTransactionRow);
   }
 
   static async findByUserId(userId, filters = {}) {
@@ -109,7 +110,7 @@ export class Transaction {
     }
     
     const result = await pool.query(query, params);
-    return result.rows;
+    return result.rows.map(mapTransactionRow);
   }
 
   static async countByUserId(userId, filters = {}) {
@@ -164,7 +165,7 @@ export class Transaction {
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
-    return result.rows;
+    return result.rows.map(mapTransactionRow);
   }
 
   static async count() {
@@ -173,3 +174,17 @@ export class Transaction {
     return parseInt(result.rows[0].total);
   }
 }
+
+const mapTransactionRow = (row) => {
+  if (!row) {
+    return row;
+  }
+
+  return {
+    ...row,
+    from_account_number: row.from_account_number
+      ? decryptAccountNumber(row.from_account_number)
+      : null,
+    to_account_number: row.to_account_number ? decryptAccountNumber(row.to_account_number) : null
+  };
+};

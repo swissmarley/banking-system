@@ -84,7 +84,7 @@ const TwoFactorChallenge = ({ onCancel }) => {
   const handleRegenerate = async () => {
     setError('');
     setRegenerating(true);
-    const result = regenerateTwoFactorSecret();
+    const result = await regenerateTwoFactorSecret();
     setRegenerating(false);
 
     if (!result.success) {
@@ -95,8 +95,8 @@ const TwoFactorChallenge = ({ onCancel }) => {
     setOtp('');
   };
 
-  const handleCancel = () => {
-    cancelTwoFactorFlow();
+  const handleCancel = async () => {
+    await cancelTwoFactorFlow();
     setOtp('');
     setError('');
     if (onCancel) {

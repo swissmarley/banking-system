@@ -6,13 +6,14 @@ A complete banking system with REST API backend and modern React frontend, built
 
 ### Backend
 - RESTful API with Express.js
-- JWT-based authentication
+- Session-based authentication with mandatory TOTP two-factor flows
 - Account management (create, view, delete)
 - Transaction processing (deposits, withdrawals, transfers)
 - Transaction history with filtering and pagination
 - Balance inquiries
 - Input validation and error handling
 - Request logging and rate limiting
+- Encrypted storage for access tokens, 2FA secrets, and account numbers
 - Swagger/OpenAPI documentation
 
 ### Frontend
@@ -67,17 +68,11 @@ cd ..
 
 5. Configure environment variables:
    
-   Create a `.env` file in the root directory:
-   ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=bankingsystem
-   DB_USER=postgres
-   DB_PASSWORD=postgres
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   PORT=5000
-   NODE_ENV=development
-   ```
+   Copy `.env.example` to `.env` and adjust the values for your environment. At a minimum you must set:
+   - `JWT_SECRET` and `DATA_ENCRYPTION_KEY` (used for signing tokens and encrypting secrets/account numbers)
+   - `SESSION_TTL_MINUTES` (defaults to 15 minutes per security requirements)
+   - `CORS_ORIGINS` matching the frontend origin so browsers can send the http-only cookies
+   - Database credentials (`DB_HOST`, `DB_USER`, etc.)
 
 6. Run database migrations:
 ```bash
@@ -125,6 +120,9 @@ The frontend will be available at `http://localhost:3000`
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/logout` - Logout user
 - `GET /api/auth/me` - Get current user info
+- `POST /api/auth/two-factor/verify` - Verify OTP code and establish a session
+- `POST /api/auth/two-factor/regenerate` - Rotate a pending two-factor secret
+- `POST /api/auth/two-factor/cancel` - Cancel the current two-factor challenge
 
 ### Accounts
 - `GET /api/accounts` - Get all user accounts
@@ -187,12 +185,16 @@ node backend/cli.js history -u 1
 - `username` (VARCHAR(50), Unique)
 - `email` (VARCHAR(100), Unique)
 - `password_hash` (VARCHAR(255))
+- `two_factor_secret` (TEXT, encrypted TOTP secret, nullable)
+- `two_factor_enabled` (BOOLEAN, default FALSE)
+- `two_factor_verified_at` (TIMESTAMP, nullable)
 - `created_at` (TIMESTAMP)
 
 ### Accounts Table
 - `id` (SERIAL, Primary Key)
 - `user_id` (INTEGER, Foreign Key)
-- `account_number` (VARCHAR(50), Unique)
+- `account_number` (TEXT, AES-GCM encrypted)
+- `account_number_hash` (VARCHAR(128), Unique deterministic hash for lookups)
 - `balance` (DECIMAL(18,2))
 - `account_type` (VARCHAR(20))
 - `created_at` (TIMESTAMP)

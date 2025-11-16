@@ -1,17 +1,105 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { registerValidation, loginValidation } from '../middleware/validation.js';
+import {
+  registerValidation,
+  loginValidation,
+  twoFactorValidation
+} from '../middleware/validation.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import {
+  createTwoFactorSecret,
+  verifyTwoFactorToken,
+  formatSecretForDisplay,
+  buildOtpAuthUrl
+} from '../utils/twoFactor.js';
+import {
+  createPendingTwoFactorToken,
+  createSessionToken,
+  verifyToken,
+  getPendingTtlMinutes,
+  getSessionTtlMinutes
+} from '../utils/tokens.js';
+import {
+  clearPendingTwoFactorCookie,
+  clearSessionCookie,
+  getPendingTwoFactorCookieName,
+  setPendingTwoFactorCookie,
+  setSessionCookie
+} from '../utils/cookies.js';
+import { encryptText, decryptText } from '../utils/crypto.js';
 
 const router = express.Router();
+
+const toPublicUser = (user) => ({
+  id: user.id,
+  username: user.username,
+  email: user.email,
+  created_at: user.created_at,
+  two_factor_enabled: Boolean(user.two_factor_enabled)
+});
+
+const issuePendingCookie = (res, user, intent) => {
+  const pendingToken = createPendingTwoFactorToken(user, intent);
+  setPendingTwoFactorCookie(res, pendingToken, getPendingTtlMinutes());
+};
+
+const issueSession = (res, user) => {
+  const sessionToken = createSessionToken(user);
+  setSessionCookie(res, sessionToken, getSessionTtlMinutes());
+};
+
+const resolvePendingUser = async (req) => {
+  const pendingToken = req.cookies?.[getPendingTwoFactorCookieName()];
+  if (!pendingToken) {
+    return null;
+  }
+
+  try {
+    const payload = verifyToken(pendingToken);
+    return await User.findByIdWithSensitive(payload.sub);
+  } catch {
+    return null;
+  }
+};
+
+const ensureTwoFactorSecret = async (user) => {
+  if (user.two_factor_secret) {
+    const plainSecret = decryptText(user.two_factor_secret);
+    return {
+      secret: plainSecret,
+      otpauthUrl: buildOtpAuthUrl(plainSecret, user.email)
+    };
+  }
+
+  const { secret, otpauthUrl } = createTwoFactorSecret(user.email);
+  const encryptedSecret = encryptText(secret);
+  await User.updateTwoFactorSecret(user.id, encryptedSecret);
+  user.two_factor_enabled = false;
+  user.two_factor_secret = encryptedSecret;
+
+  return { secret, otpauthUrl };
+};
+
+const twoFactorResponse = (status, { otpauthUrl = null, secret = null } = {}) => {
+  const response = {
+    status,
+    expiresInMinutes: getPendingTtlMinutes()
+  };
+
+  if (status === 'setup' && secret) {
+    response.otpauthUrl = otpauthUrl || null;
+    response.manualCode = formatSecretForDisplay(secret);
+  }
+
+  return response;
+};
 
 /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Register a new user and get JWT token
+ *     summary: Register a new user and start the two-factor setup flow
  *     tags: [Authentication]
  *     security: []
  *     requestBody:
@@ -27,55 +115,36 @@ const router = express.Router();
  *             properties:
  *               username:
  *                 type: string
- *                 example: john_doe
  *               email:
  *                 type: string
- *                 example: john@example.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: password123
  *     responses:
  *       201:
- *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   description: JWT token to use for authenticated requests
- *                 user:
- *                   type: object
+ *         description: Account created; OTP secret issued for setup
  *       400:
  *         description: Validation error
  */
 router.post('/register', authLimiter, registerValidation, async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    clearSessionCookie(res);
 
+    const { username, email, password } = req.body;
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     const user = await User.create(username, email, password);
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    const { secret, otpauthUrl } = await ensureTwoFactorSecret(user);
+
+    issuePendingCookie(res, user, 'setup');
 
     res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      }
+      message: 'Account created. Complete two-factor setup to finish signing in.',
+      user: toPublicUser(user),
+      twoFactor: twoFactorResponse('setup', { otpauthUrl, secret })
     });
   } catch (error) {
     next(error);
@@ -86,7 +155,7 @@ router.post('/register', authLimiter, registerValidation, async (req, res, next)
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Login user and get JWT token
+ *     summary: Authenticate credentials and trigger the OTP challenge
  *     tags: [Authentication]
  *     security: []
  *     requestBody:
@@ -101,32 +170,20 @@ router.post('/register', authLimiter, registerValidation, async (req, res, next)
  *             properties:
  *               email:
  *                 type: string
- *                 example: john@example.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   description: JWT token to use for authenticated requests
- *                 user:
- *                   type: object
+ *         description: Password accepted; next step required
  *       401:
  *         description: Invalid credentials
  */
 router.post('/login', authLimiter, loginValidation, async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    clearSessionCookie(res);
 
+    const { email, password } = req.body;
     const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -137,20 +194,23 @@ router.post('/login', authLimiter, loginValidation, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    let secretBundle = null;
+    if (!user.two_factor_secret || !user.two_factor_enabled) {
+      secretBundle = await ensureTwoFactorSecret(user);
+      issuePendingCookie(res, user, 'setup');
+      return res.json({
+        message: 'Finish setting up two-factor authentication to sign in.',
+        user: toPublicUser(user),
+        twoFactor: twoFactorResponse('setup', secretBundle)
+      });
+    }
 
-    res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      }
+    issuePendingCookie(res, user, 'login');
+
+    return res.json({
+      message: 'Two-factor verification required',
+      user: toPublicUser(user),
+      twoFactor: twoFactorResponse('verify')
     });
   } catch (error) {
     next(error);
@@ -159,31 +219,158 @@ router.post('/login', authLimiter, loginValidation, async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/auth/two-factor/verify:
+ *   post:
+ *     summary: Verify the OTP code and issue a short-lived session
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *       400:
+ *         description: Invalid/expired OTP
+ *       401:
+ *         description: Missing pending challenge
+ */
+router.post(
+  '/two-factor/verify',
+  authLimiter,
+  twoFactorValidation,
+  async (req, res, next) => {
+    try {
+      const { code } = req.body;
+      const pendingUser = await resolvePendingUser(req);
+
+      if (!pendingUser || !pendingUser.two_factor_secret) {
+        return res.status(401).json({ error: 'No pending two-factor challenge' });
+      }
+
+      const secret = decryptText(pendingUser.two_factor_secret);
+      const isValid = verifyTwoFactorToken(secret, code);
+
+      if (!isValid) {
+        return res.status(400).json({ error: 'Invalid or expired OTP code' });
+      }
+
+      if (!pendingUser.two_factor_enabled) {
+        await User.markTwoFactorVerified(pendingUser.id);
+        pendingUser.two_factor_enabled = true;
+      }
+
+      clearPendingTwoFactorCookie(res);
+      issueSession(res, pendingUser);
+
+      const safeUser = await User.findById(pendingUser.id);
+
+      res.json({
+        message: 'Two-factor authentication successful',
+        user: toPublicUser(safeUser)
+      });
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        clearPendingTwoFactorCookie(res);
+        return res.status(401).json({ error: 'Two-factor challenge expired. Please log in again.' });
+      }
+      next(error);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/auth/two-factor/regenerate:
+ *   post:
+ *     summary: Generate a new OTP secret while the setup challenge is pending
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Secret rotated
+ *       400:
+ *         description: No setup flow in progress
+ */
+router.post('/two-factor/regenerate', authLimiter, async (req, res, next) => {
+  try {
+    const pendingUser = await resolvePendingUser(req);
+    if (!pendingUser || pendingUser.two_factor_enabled) {
+      return res
+        .status(400)
+        .json({ error: 'Two-factor regeneration is only available during setup' });
+    }
+
+    const { secret, otpauthUrl } = createTwoFactorSecret(pendingUser.email);
+    await User.updateTwoFactorSecret(pendingUser.id, encryptText(secret));
+
+    issuePendingCookie(res, pendingUser, 'setup');
+
+    res.json({
+      message: 'Generated a new secret. Configure your authenticator app again.',
+      twoFactor: twoFactorResponse('setup', { secret, otpauthUrl })
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/two-factor/cancel:
+ *   post:
+ *     summary: Cancel the current two-factor challenge and clear pending cookies
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Challenge cancelled
+ */
+router.post('/two-factor/cancel', authLimiter, (req, res) => {
+  clearPendingTwoFactorCookie(res);
+  res.json({ message: 'Two-factor challenge canceled' });
+});
+
+/**
+ * @swagger
  * /api/auth/logout:
  *   post:
- *     summary: Logout user (client should discard token)
+ *     summary: Logout the current session (clears http-only cookies)
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Logout successful
+ *         description: Logged out
  */
 router.post('/logout', authenticateToken, (req, res) => {
-  res.json({ message: 'Logout successful. Please discard the token on client side.' });
+  clearSessionCookie(res);
+  clearPendingTwoFactorCookie(res);
+  res.json({ message: 'Logged out' });
 });
 
 /**
  * @swagger
  * /api/auth/me:
  *   get:
- *     summary: Get current user info
+ *     summary: Get the authenticated user profile
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: User information
+ *         description: User info
+ *       401:
+ *         description: Missing/expired session
  */
 router.get('/me', authenticateToken, async (req, res, next) => {
   try {
@@ -191,12 +378,10 @@ router.get('/me', authenticateToken, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
+    res.json(toPublicUser(user));
   } catch (error) {
     next(error);
   }
 });
 
 export default router;
-
-

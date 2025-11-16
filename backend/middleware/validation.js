@@ -67,4 +67,12 @@ export const transferValidation = [
   handleValidationErrors
 ];
 
+export const twoFactorValidation = [
+  body('code')
+    .isString()
+    .trim()
+    .matches(/^[0-9]{6}$/)
+    .withMessage('OTP code must be a 6-digit number'),
+  handleValidationErrors
+];
 

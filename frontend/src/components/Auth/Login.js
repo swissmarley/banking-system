@@ -39,8 +39,8 @@ const Login = () => {
     }
   };
 
-  const handleCancelTwoFactor = () => {
-    cancelTwoFactorFlow();
+  const handleCancelTwoFactor = async () => {
+    await cancelTwoFactorFlow();
     setPassword('');
     setError('');
   };
