@@ -118,6 +118,8 @@ The frontend will be available at `http://localhost:3000`
 
 ### External Payment API
 
+Added a dedicated, tokenless payment portal at `/send-payment` .
+
 Third parties can credit accounts by calling `POST /api/transactions/external/incoming` with the header `X-External-API-Key: <EXTERNAL_PAYMENTS_API_KEY>` and payload:
 
 ```json

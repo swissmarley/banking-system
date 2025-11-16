@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/accounts.js';
 import transactionRoutes from './routes/transactions.js';
 import scheduledPaymentRoutes from './routes/scheduledPayments.js';
+import paymentPortalRoutes from './routes/paymentPortal.js';
 import { sanitizeRequest } from './middleware/sanitize.js';
 
 dotenv.config();
@@ -54,6 +55,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/scheduled-payments', scheduledPaymentRoutes);
+app.use('/send-payment', paymentPortalRoutes);
 
 // Root metadata
 app.get('/', (req, res) => {
@@ -129,3 +131,6 @@ process.on('SIGINT', async () => {
 });
 
 startServer();
+
+
+

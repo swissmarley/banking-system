@@ -1,116 +1,229 @@
-.auth-container {
+.auth-shell {
+  min-height: calc(100vh - 120px);
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 200px);
+  justify-content: center;
   padding: 2rem;
+}
+
+.auth-panel {
+  width: min(1100px, 100%);
+  background: rgba(6, 11, 25, 0.8);
+  border-radius: 32px;
+  padding: clamp(2rem, 4vw, 3rem);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
+  color: #f6f7fb;
+  box-shadow: 0 45px 120px rgba(5, 5, 15, 0.65);
+  backdrop-filter: blur(18px);
+}
+
+.auth-panel__intro {
+  padding-right: 1rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 1rem;
+}
+
+.auth-panel__intro h1 {
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  margin: 0 0 1rem;
+  line-height: 1.1;
+}
+
+.auth-panel__intro h1 span {
+  background: linear-gradient(120deg, #5ad8ff, #5ad3a2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.auth-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.auth-highlights li::before {
+  content: '•';
+  margin-right: 0.5rem;
+  color: #5ad8ff;
+}
+
+.auth-panel__form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-card {
-  background: white;
+  background: rgba(6, 11, 25, 0.9);
+  border-radius: 24px;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
+  width: min(420px, 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 .auth-card h2 {
-  margin-bottom: 1.5rem;
-  color: #2c3e50;
-  text-align: center;
+  margin: 0 0 1.25rem;
+  font-size: 1.6rem;
 }
 
-.form-group {
-  margin-bottom: 1.5rem;
+.auth-banner {
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
+.auth-banner.error {
+  background: rgba(255, 107, 129, 0.18);
+  color: #ffd7dd;
+  border: 1px solid rgba(255, 107, 129, 0.35);
 }
 
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.auth-banner.success {
+  background: rgba(90, 211, 162, 0.18);
+  color: #e5fff5;
+  border: 1px solid rgba(90, 211, 162, 0.35);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.floating-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.floating-label input,
+.floating-label textarea,
+.floating-label select {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 18, 35, 0.8);
+  padding: 0.9rem 1.1rem;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  color: #f7f8fd;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group-inline {
+.floating-label input:focus,
+.floating-label select:focus,
+.floating-label textarea:focus {
+  outline: none;
+  border-color: #5ad8ff;
+  box-shadow: 0 0 0 2px rgba(90, 216, 255, 0.2);
+}
+
+.password-field {
   display: flex;
   align-items: center;
-  margin-top: 0.5rem;
+  background: rgba(12, 18, 35, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding-right: 0.5rem;
 }
 
-.form-group-inline input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  margin: 0;
+.password-field input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  padding: 0.9rem 1.1rem;
+  color: inherit;
+}
+
+.ghost-button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #5ad8ff;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 0.35rem 0.75rem;
   cursor: pointer;
 }
 
-.form-group-inline label {
-  display: inline-block;
-  margin: 0 0 0 8px;
-  font-size: 0.9rem;
-  color: #666;
-  cursor: pointer;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #3498db;
-}
-
-.form-group input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
+.ghost-button:hover {
+  border-color: rgba(90, 216, 255, 0.6);
+  color: #9be6ff;
 }
 
 .btn-primary {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #3498db;
-  color: white;
+  background: linear-gradient(120deg, #5ad3a2, #5ad8ff);
+  color: #051023;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 15px 35px rgba(90, 216, 255, 0.35);
 }
 
 .btn-primary:disabled {
-  background-color: #bdc3c7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  border: 1px solid #fcc;
+.password-meter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.password-pill {
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.password-pill.pass {
+  border-color: rgba(112, 255, 197, 0.5);
+  color: #aaffde;
+}
+
+.password-pill.fail {
+  border-color: rgba(255, 107, 129, 0.35);
+  color: #ffc7d0;
 }
 
 .auth-link {
+  margin-top: 1.25rem;
   text-align: center;
-  margin-top: 1.5rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .auth-link a {
-  color: #3498db;
+  color: #5ad8ff;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -126,54 +239,34 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  align-items: stretch;
-}
-
-.two-factor-container h2 {
-  margin-bottom: 0;
 }
 
 .two-factor-description {
-  color: #555;
-  text-align: center;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .two-factor-user {
   font-weight: 600;
-  color: #2c3e50;
-  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .two-factor-setup {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  align-items: center;
-}
-
-@media (min-width: 640px) {
-  .two-factor-setup {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-  }
 }
 
 .two-factor-qr-wrapper {
   display: flex;
-  align-items: center;
   justify-content: center;
 }
 
 .two-factor-qr {
   width: 200px;
   height: 200px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 0.75rem;
-  object-fit: contain;
+  border-radius: 12px;
+  padding: 1rem;
+  background: white;
 }
 
 .two-factor-qr--placeholder {
@@ -182,6 +275,8 @@
   justify-content: center;
   color: #888;
   background-color: #f7f7f7;
+  height: 200px;
+  border-radius: 12px;
 }
 
 .two-factor-manual {
@@ -224,6 +319,7 @@
 .two-factor-actions {
   display: flex;
   justify-content: center;
+  gap: 1rem;
 }
 
 .btn-secondary {
@@ -263,43 +359,17 @@
   text-decoration: none;
 }
 
-.password-checker {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+@media (max-width: 768px) {
+  .auth-shell {
+    padding: 1rem;
+  }
+
+  .auth-panel {
+    border-radius: 24px;
+    padding: 1.75rem;
+  }
+
+  .auth-card {
+    padding: 1.5rem;
+  }
 }
-
-.password-checker-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  color: #c0392b;
-}
-
-.password-checker-item.pass {
-  color: #2d9c5b;
-}
-
-.password-checker-item.fail {
-  color: #c0392b;
-}
-
-.password-checker-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.password-checker-icon.pass {
-  color: #2ecc71;
-}
-
-.password-checker-icon.fail {
-  color: #e74c3c;
-}
-
-
-
-
