@@ -79,6 +79,10 @@ cd ..
    - `EXTERNAL_PAYMENTS_API_KEY` to authorize inbound API payment calls
    - Database credentials (`DB_HOST`, `DB_USER`, etc.)
 
+   > **Docker Compose note:** the backend container automatically loads the root `.env` file via `env_file`. If
+   > `JWT_SECRET` or `DATA_ENCRYPTION_KEY` are missing, the container will repeatedly crash on start because the
+   > encryption key cannot be derived. Always ensure the `.env` file exists before running `docker compose up`.
+
 6. Run database migrations:
 ```bash
 npm run migrate
