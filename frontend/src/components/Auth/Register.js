@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import TwoFactorChallenge from './TwoFactorChallenge';
 import './Auth.css';
 
 const passwordRequirements = [
@@ -80,19 +79,14 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register, twoFactorState, user, cancelTwoFactorFlow } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && twoFactorState.status === 'idle') {
+    if (user) {
       navigate('/dashboard');
     }
-  }, [user, twoFactorState.status, navigate]);
-
-  const twoFactorActive = useMemo(
-    () => twoFactorState.status !== 'idle',
-    [twoFactorState.status]
-  );
+  }, [user, navigate]);
 
   const requirementStatuses = useMemo(
     () =>
@@ -113,111 +107,98 @@ const Register = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
-    setLoading(true);
 
     const passwordError = validatePassword(password);
     if (passwordError) {
       setError(passwordError);
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
     const result = await register(username, email, password);
     setLoading(false);
 
     if (!result.success) {
       setError(result.error);
-    } else {
-      setPassword('');
+      return;
     }
-  };
 
-  const handleCancelTwoFactor = async () => {
-    await cancelTwoFactorFlow();
-    setError('');
+    navigate('/dashboard');
   };
-
-  const cardClasses = `auth-card${twoFactorActive ? ' two-factor-active' : ''}`;
 
   return (
     <div className="auth-container">
-      <div className={cardClasses}>
-        {twoFactorActive ? (
-          <TwoFactorChallenge onCancel={handleCancelTwoFactor} />
-        ) : (
-          <>
-            <h2>Create account</h2>
-            {error && <div className="error-message">{error}</div>}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="username">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  required
-                  minLength={3}
-                  disabled={loading}
-                  autoComplete="username"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  disabled={loading}
-                  autoComplete="email"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  minLength={8}
-                  disabled={loading}
-                  autoComplete="new-password"
-                />
-                <div className="form-group-inline">
-                  <input
-                    type="checkbox"
-                    id="showPassword"
-                    checked={showPassword}
-                    onChange={(e) => setShowPassword(e.target.checked)}
-                  />
-                  <label htmlFor="showPassword">Show password</label>
+      <div className="auth-card">
+        <h2>Create account</h2>
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              required
+              minLength={3}
+              disabled={loading}
+              autoComplete="username"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              disabled={loading}
+              autoComplete="email"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              minLength={8}
+              disabled={loading}
+              autoComplete="new-password"
+            />
+            <div className="form-group-inline">
+              <input
+                type="checkbox"
+                id="showPassword"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+              />
+              <label htmlFor="showPassword">Show password</label>
+            </div>
+            <div className="password-checker" aria-live="polite">
+              {requirementStatuses.map((requirement) => (
+                <div
+                  key={requirement.id}
+                  className={`password-checker-item ${
+                    requirement.satisfied ? 'pass' : 'fail'
+                  }`}
+                >
+                  <RequirementIcon passed={requirement.satisfied} />
+                  <span>{requirement.label}</span>
                 </div>
-                <div className="password-checker" aria-live="polite">
-                  {requirementStatuses.map((requirement) => (
-                    <div
-                      key={requirement.id}
-                      className={`password-checker-item ${
-                        requirement.satisfied ? 'pass' : 'fail'
-                      }`}
-                    >
-                      <RequirementIcon passed={requirement.satisfied} />
-                      <span>{requirement.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Registering...' : 'Register'}
-              </button>
-            </form>
-            <p className="auth-link">
-              Already have an account? <Link to="/login">Login here</Link>
-            </p>
-          </>
-        )}
+              ))}
+            </div>
+          </div>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+        </form>
+        <p className="auth-link">
+          Already have an account? <Link to="/login">Login here</Link>
+        </p>
       </div>
     </div>
   );

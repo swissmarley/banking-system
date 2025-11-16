@@ -12,6 +12,44 @@ import { requireExternalApiKey } from '../middleware/externalApiKey.js';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/transactions/external/incoming:
+ *   post:
+ *     summary: Record an incoming payment from an external IBAN
+ *     tags: [Transactions]
+ *     security: []
+ *     parameters:
+ *       - in: header
+ *         name: X-External-API-Key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API key configured via EXTERNAL_PAYMENTS_API_KEY
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - iban
+ *               - sender_name
+ *               - amount
+ *             properties:
+ *               iban:
+ *                 type: string
+ *               sender_name:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *               reference:
+ *                 type: string
+ *                 example: Invoice 123
+ *     responses:
+ *       201:
+ *         description: Incoming payment registered
+ */
 router.post(
   '/external/incoming',
   requireExternalApiKey,
@@ -248,6 +286,41 @@ router.post('/withdraw', depositWithdrawValidation, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/external/outgoing:
+ *   post:
+ *     summary: Send funds from a user account to an external IBAN
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - from_account_id
+ *               - recipient_name
+ *               - recipient_iban
+ *               - amount
+ *             properties:
+ *               from_account_id:
+ *                 type: integer
+ *               recipient_name:
+ *                 type: string
+ *               recipient_iban:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *               reference:
+ *                 type: string
+ *                 example: Rent payment
+ *     responses:
+ *       201:
+ *         description: External payment initiated
+ */
 router.post('/external/outgoing', externalOutgoingValidation, async (req, res, next) => {
   try {
     const { from_account_id, recipient_name, recipient_iban, amount, reference } = req.body;

@@ -67,15 +67,6 @@ export const transferValidation = [
   handleValidationErrors
 ];
 
-export const twoFactorValidation = [
-  body('code')
-    .isString()
-    .trim()
-    .matches(/^[0-9]{6}$/)
-    .withMessage('OTP code must be a 6-digit number'),
-  handleValidationErrors
-];
-
 export const externalIncomingValidation = [
   body('iban').isString().trim().isLength({ min: 6 }).withMessage('Recipient IBAN is required'),
   body('sender_name').isString().trim().isLength({ min: 2 }).withMessage('Sender name is required'),
@@ -111,5 +102,14 @@ export const scheduledPaymentValidation = [
       return true;
     }),
   body('notes').optional().isString().trim().isLength({ max: 500 }),
+  handleValidationErrors
+];
+
+export const twoFactorValidation = [
+  body('code')
+    .isString()
+    .trim()
+    .matches(/^[0-9]{6}$/)
+    .withMessage('OTP code must be a 6-digit number'),
   handleValidationErrors
 ];

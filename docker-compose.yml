@@ -38,8 +38,6 @@ services:
       JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret}
       DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:-local-dev-encryption-key-please-change}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-      SESSION_TTL_MINUTES: ${SESSION_TTL_MINUTES:-15}
-      PENDING_2FA_TTL_MINUTES: ${PENDING_2FA_TTL_MINUTES:-5}
       EXTERNAL_PAYMENTS_API_KEY: ${EXTERNAL_PAYMENTS_API_KEY:-local-external-api-key}
     ports:
       - "8080:8080"
