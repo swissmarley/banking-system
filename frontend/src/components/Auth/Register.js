@@ -132,8 +132,8 @@ const Register = () => {
     }
   };
 
-  const handleCancelTwoFactor = () => {
-    cancelTwoFactorFlow();
+  const handleCancelTwoFactor = async () => {
+    await cancelTwoFactorFlow();
     setError('');
   };
 

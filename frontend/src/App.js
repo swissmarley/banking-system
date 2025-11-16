@@ -7,6 +7,8 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Accounts from './components/Accounts/Accounts';
 import Transactions from './components/Transactions/Transactions';
 import TransactionForm from './components/Transactions/TransactionForm';
+import Payments from './components/Payments/Payments';
+import Bills from './components/Bills/Bills';
 import Navbar from './components/Layout/Navbar';
 import './App.css';
 
@@ -59,6 +61,22 @@ function App() {
                 element={
                   <PrivateRoute>
                     <TransactionForm />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/payments"
+                element={
+                  <PrivateRoute>
+                    <Payments />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/bills"
+                element={
+                  <PrivateRoute>
+                    <Bills />
                   </PrivateRoute>
                 }
               />

@@ -67,4 +67,49 @@ export const transferValidation = [
   handleValidationErrors
 ];
 
+export const twoFactorValidation = [
+  body('code')
+    .isString()
+    .trim()
+    .matches(/^[0-9]{6}$/)
+    .withMessage('OTP code must be a 6-digit number'),
+  handleValidationErrors
+];
 
+export const externalIncomingValidation = [
+  body('iban').isString().trim().isLength({ min: 6 }).withMessage('Recipient IBAN is required'),
+  body('sender_name').isString().trim().isLength({ min: 2 }).withMessage('Sender name is required'),
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
+  body('reference').optional().isString().trim().isLength({ max: 255 }),
+  handleValidationErrors
+];
+
+export const externalOutgoingValidation = [
+  body('from_account_id').isInt().withMessage('Source account is required'),
+  body('recipient_name').isString().trim().isLength({ min: 2 }).withMessage('Recipient name is required'),
+  body('recipient_iban').isString().trim().isLength({ min: 6 }).withMessage('Recipient IBAN is required'),
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
+  body('reference').optional().isString().trim().isLength({ max: 255 }),
+  handleValidationErrors
+];
+
+export const scheduledPaymentValidation = [
+  body('account_id').isInt().withMessage('Account is required'),
+  body('payee_name').isString().trim().isLength({ min: 2 }).withMessage('Payee name is required'),
+  body('payee_iban').isString().trim().isLength({ min: 6 }).withMessage('Payee IBAN is required'),
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be positive'),
+  body('frequency')
+    .isIn(['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'])
+    .withMessage('Invalid frequency'),
+  body('start_date')
+    .isISO8601()
+    .withMessage('Start date must be a valid date')
+    .custom((value) => {
+      if (new Date(value).toString() === 'Invalid Date') {
+        throw new Error('Invalid start date');
+      }
+      return true;
+    }),
+  body('notes').optional().isString().trim().isLength({ max: 500 }),
+  handleValidationErrors
+];

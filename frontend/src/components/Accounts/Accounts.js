@@ -9,6 +9,7 @@ const Accounts = () => {
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ account_type: 'checking' });
+  const [pendingClosure, setPendingClosure] = useState(null);
 
   useEffect(() => {
     fetchAccounts();
@@ -43,19 +44,41 @@ const Accounts = () => {
     }
   };
 
-  const handleDeleteAccount = async (id) => {
+  const handleDeleteAccount = async (id, transferAccountId = null) => {
     if (!window.confirm('Are you sure you want to delete this account?')) {
       return;
     }
 
     try {
-      await apiClient.delete(`/api/accounts/${id}`);
+      await apiClient.delete(`/api/accounts/${id}`, {
+        ...(transferAccountId && { data: { transfer_account_id: transferAccountId } })
+      });
       setAccounts(accounts.filter(acc => acc.id !== id));
       setSuccess('Account deleted successfully!');
+      setPendingClosure(null);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete account');
     }
+  };
+
+  const initiateClosure = (account) => {
+    if (parseFloat(account.balance) === 0) {
+      handleDeleteAccount(account.id);
+      return;
+    }
+
+    const otherAccounts = accounts.filter((acc) => acc.id !== account.id);
+    if (otherAccounts.length === 0) {
+      setError('You need another account to transfer the funds before deleting.');
+      return;
+    }
+
+    setPendingClosure({
+      accountId: account.id,
+      balance: parseFloat(account.balance),
+      transferAccountId: otherAccounts[0]?.id || null
+    });
   };
 
   if (loading) {
@@ -98,6 +121,51 @@ const Accounts = () => {
         </div>
       )}
 
+      {pendingClosure && (
+        <div className="form-card">
+          <h2>Close Account</h2>
+          <p>
+            Account has ${pendingClosure.balance.toFixed(2)}. Choose where to transfer funds
+            before closing.
+          </p>
+          <div className="form-group">
+            <label htmlFor="transferAccount">Transfer destination</label>
+            <select
+              id="transferAccount"
+              value={pendingClosure.transferAccountId || ''}
+              onChange={(e) =>
+                setPendingClosure((prev) => ({
+                  ...prev,
+                  transferAccountId: e.target.value
+                }))
+              }
+            >
+              {accounts
+                .filter((acc) => acc.id !== pendingClosure.accountId)
+                .map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.account_number} ({acc.account_type})
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="form-actions">
+            <button
+              className="btn-primary"
+              onClick={() =>
+                handleDeleteAccount(pendingClosure.accountId, pendingClosure.transferAccountId)
+              }
+              disabled={!pendingClosure.transferAccountId}
+            >
+              Transfer & Delete
+            </button>
+            <button className="btn-secondary" onClick={() => setPendingClosure(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {accounts.length === 0 ? (
         <div className="empty-state">
           <p>No accounts yet. Create your first account above.</p>
@@ -109,6 +177,7 @@ const Accounts = () => {
               <div className="account-info">
                 <h3>{account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)} Account</h3>
                 <p className="account-number">Account: {account.account_number}</p>
+                {account.iban && <p className="account-number">IBAN: {account.iban}</p>}
                 <p className="account-balance">Balance: ${parseFloat(account.balance).toFixed(2)}</p>
                 <p className="account-date">
                   Created: {new Date(account.created_at).toLocaleDateString()}
@@ -116,10 +185,13 @@ const Accounts = () => {
               </div>
               <div className="account-actions">
                 <button
-                  onClick={() => handleDeleteAccount(account.id)}
+                  onClick={() => initiateClosure(account)}
                   className="btn-danger"
-                  disabled={parseFloat(account.balance) > 0}
-                  title={parseFloat(account.balance) > 0 ? 'Cannot delete account with balance' : 'Delete account'}
+                  title={
+                    parseFloat(account.balance) > 0
+                      ? 'Move funds before deleting'
+                      : 'Delete account'
+                  }
                 >
                   Delete
                 </button>

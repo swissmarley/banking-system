@@ -1,0 +1,28 @@
+.bills-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.scheduled-list {
+  margin-top: 2rem;
+}
+
+.scheduled-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.scheduled-item h3 {
+  margin: 0 0 0.4rem 0;
+}
+
+.scheduled-item p {
+  margin: 0.1rem 0;
+  color: #4b5563;
+}

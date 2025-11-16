@@ -60,10 +60,13 @@ const Dashboard = () => {
           <div className="accounts-grid">
             {accounts.map((account) => (
               <div key={account.id} className="account-card">
-              <h4>{account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}</h4>
-              <p className="account-number">{account.account_number}</p>
-              <p className="account-balance">${parseFloat(account.balance).toFixed(2)}</p>
-            </div>
+                <h4>
+                  {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
+                </h4>
+                <p className="account-number">Account: {account.account_number}</p>
+                {account.iban && <p className="account-number">IBAN: {account.iban}</p>}
+                <p className="account-balance">${parseFloat(account.balance).toFixed(2)}</p>
+              </div>
             ))}
           </div>
         )}
@@ -94,8 +97,8 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td>${parseFloat(transaction.amount).toFixed(2)}</td>
-                    <td>{transaction.from_account_number || 'N/A'}</td>
-                    <td>{transaction.to_account_number || 'N/A'}</td>
+                    <td>{transaction.from_display || transaction.from_account_number || 'N/A'}</td>
+                    <td>{transaction.to_display || transaction.to_account_number || 'N/A'}</td>
                     <td>{new Date(transaction.timestamp).toLocaleDateString()}</td>
                   </tr>
                 ))}
