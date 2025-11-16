@@ -110,9 +110,8 @@ The frontend will be available at `http://localhost:3000`
 
 ### Frontend API access
 
-- The production build is served through Nginx (see `frontend/nginx/default.conf`), which now proxies `/api` and `/api-docs` back to the backend container and rewrites SPA routes to `index.html`. This removes the blank-page issue when accessing `/dashboard` or other client routes directly and keeps API calls on the same origin to avoid CORS errors.
+- The production build is served through Nginx (see `frontend/nginx/default.conf`), which now proxies `/api` and `/api-docs` back to the backend container and rewrites SPA routes to `index.html`.
 - If you expose the API on a different public domain (for example, `https://api.example.com`), set `FRONTEND_PUBLIC_API_URL` in your `.env` before running `docker-compose build frontend`. The value is forwarded to the `REACT_APP_API_URL` build argument so the React app calls the correct host.
-- `npm audit fix --force` still runs as part of the backend image build to address the node module warnings you observed. Create React App's toolchain cannot be auto-fixed with that flag without uninstalling `react-scripts`, so the frontend Dockerfile only runs `npm install`. The outstanding CRA advisories are documented via `npm audit` output and can be reviewed in the CI logs.
 
 ### API Documentation hosts
 
