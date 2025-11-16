@@ -62,11 +62,11 @@ const Login = () => {
         <div className="auth-panel__intro">
           <p className="eyebrow">Secure banking suite</p>
           <h1>
-            Sign in with <span>JWT protection</span>
+            Sign in with <span>2-FA Authentication</span>
           </h1>
           <p className="subtitle">
-            Use your email and password to retrieve a fresh token and unlock the complete banking
-            workspace — two-factor verification keeps your session locked down.
+            Use your email and password and unlock the complete banking workspace — 
+            two-factor verification keeps your session locked down 🔒
           </p>
           <ul className="auth-highlights">
             <li>Realtime balances & transfers</li>
@@ -123,7 +123,7 @@ const Login = () => {
                   </label>
 
                   <button type="submit" className="btn-primary" disabled={submitting}>
-                    {submitting ? 'Authenticating…' : 'Login & get JWT'}
+                    {submitting ? 'Authenticating…' : 'Login'}
                   </button>
                 </form>
                 <p className="auth-link">
