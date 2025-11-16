@@ -2,31 +2,118 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--bg-gradient);
 }
 
 .main-content {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
   width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+}
+
+.page-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 1.75rem;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 30px 60px rgba(5, 8, 18, 0.45);
+}
+
+.section-title {
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+  color: #f6f7fb;
 }
 
 .loading {
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 400px;
-  font-size: 1.2rem;
-  color: #666;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.error-message,
+.success-message {
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.error-message {
+  background: rgba(255, 107, 129, 0.15);
+  border: 1px solid rgba(255, 107, 129, 0.35);
+  color: #ffd7dd;
+}
+
+.success-message {
+  background: rgba(90, 211, 162, 0.15);
+  border: 1px solid rgba(90, 211, 162, 0.35);
+  color: #e4fff1;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary {
+  background: linear-gradient(120deg, #5ad3a2, #5ad8ff);
+  color: #051023;
+  border: none;
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 35px rgba(90, 216, 255, 0.35);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ghost-button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #5ad8ff;
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.ghost-button:hover:not(:disabled) {
+  border-color: rgba(90, 216, 255, 0.6);
+  color: #9be6ff;
+}
+
+.ghost-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 }
-
-
-
-

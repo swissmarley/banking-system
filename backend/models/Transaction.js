@@ -1,14 +1,14 @@
 import { getPool } from '../config/database.js';
 
 export class Transaction {
-  static async create(fromAccountId, toAccountId, amount, type, status = 'completed') {
+  static async create(fromAccountId, toAccountId, amount, type, status = 'completed', description = null) {
     const pool = getPool();
     
     const result = await pool.query(
-      `INSERT INTO transactions (from_account_id, to_account_id, amount, type, status, timestamp)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       RETURNING id, from_account_id, to_account_id, amount, type, status, timestamp`,
-      [fromAccountId, toAccountId, amount, type, status]
+      `INSERT INTO transactions (from_account_id, to_account_id, amount, type, status, description, timestamp)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       RETURNING id, from_account_id, to_account_id, amount, type, status, description, timestamp`,
+      [fromAccountId, toAccountId, amount, type, status, description]
     );
     
     return result.rows[0];

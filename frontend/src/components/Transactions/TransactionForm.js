@@ -92,30 +92,34 @@ const TransactionForm = () => {
   };
 
   return (
-    <div className="transaction-form-page">
-      <h1>New Transaction</h1>
+    <div className="transaction-form-page page-grid">
+      <header className="transactions-header">
+        <div>
+          <p className="eyebrow">New Transaction</p>
+          <h1>Execute a secure movement</h1>
+          <p className="subtitle">
+            Move funds between your accounts, inject capital, or withdraw safely from any ledger.
+          </p>
+        </div>
+      </header>
+
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
 
-      <div className="form-card">
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="type">Transaction Type</label>
-            <select
-              id="type"
-              value={formData.type}
-              onChange={handleTypeChange}
-              required
-            >
+      <section className="panel form-card">
+        <form onSubmit={handleSubmit} className="transaction-form">
+          <label>
+            <span>Transaction type</span>
+            <select id="type" value={formData.type} onChange={handleTypeChange} required>
               <option value="deposit">Deposit</option>
               <option value="withdrawal">Withdrawal</option>
               <option value="transfer">Transfer</option>
             </select>
-          </div>
+          </label>
 
           {formData.type === 'deposit' && (
-            <div className="form-group">
-              <label htmlFor="account_id">To Account</label>
+            <label>
+              <span>Destination account</span>
               <select
                 id="account_id"
                 value={formData.account_id}
@@ -123,18 +127,18 @@ const TransactionForm = () => {
                 required
               >
                 <option value="">Select account</option>
-                {accounts.map(acc => (
+                {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
-                    {acc.account_number} - ${parseFloat(acc.balance).toFixed(2)}
+                    {acc.account_number} · ${parseFloat(acc.balance).toFixed(2)}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
 
           {formData.type === 'withdrawal' && (
-            <div className="form-group">
-              <label htmlFor="account_id">From Account</label>
+            <label>
+              <span>Source account</span>
               <select
                 id="account_id"
                 value={formData.account_id}
@@ -142,19 +146,19 @@ const TransactionForm = () => {
                 required
               >
                 <option value="">Select account</option>
-                {accounts.map(acc => (
+                {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
-                    {acc.account_number} - ${parseFloat(acc.balance).toFixed(2)}
+                    {acc.account_number} · ${parseFloat(acc.balance).toFixed(2)}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
 
           {formData.type === 'transfer' && (
-            <>
-              <div className="form-group">
-                <label htmlFor="from_account_id">From Account</label>
+            <div className="transfer-grid">
+              <label>
+                <span>From account</span>
                 <select
                   id="from_account_id"
                   value={formData.from_account_id}
@@ -162,15 +166,15 @@ const TransactionForm = () => {
                   required
                 >
                   <option value="">Select account</option>
-                  {accounts.map(acc => (
+                  {accounts.map((acc) => (
                     <option key={acc.id} value={acc.id}>
-                      {acc.account_number} - ${parseFloat(acc.balance).toFixed(2)}
+                      {acc.account_number} · ${parseFloat(acc.balance).toFixed(2)}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="to_account_id">To Account</label>
+              </label>
+              <label>
+                <span>To account</span>
                 <select
                   id="to_account_id"
                   value={formData.to_account_id}
@@ -179,19 +183,19 @@ const TransactionForm = () => {
                 >
                   <option value="">Select account</option>
                   {accounts
-                    .filter(acc => acc.id !== parseInt(formData.from_account_id))
-                    .map(acc => (
+                    .filter((acc) => acc.id !== parseInt(formData.from_account_id, 10))
+                    .map((acc) => (
                       <option key={acc.id} value={acc.id}>
-                        {acc.account_number} - ${parseFloat(acc.balance).toFixed(2)}
+                        {acc.account_number} · ${parseFloat(acc.balance).toFixed(2)}
                       </option>
                     ))}
                 </select>
-              </div>
-            </>
+              </label>
+            </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="amount">Amount</label>
+          <label>
+            <span>Amount</span>
             <input
               type="number"
               id="amount"
@@ -202,16 +206,15 @@ const TransactionForm = () => {
               required
               placeholder="0.00"
             />
-          </div>
+          </label>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Processing...' : `Process ${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}`}
+            {loading ? 'Processing…' : `Finalize ${formData.type}`}
           </button>
         </form>
-      </div>
+      </section>
     </div>
   );
 };
 
 export default TransactionForm;
-

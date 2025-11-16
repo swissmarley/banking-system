@@ -1,4 +1,20 @@
 import { getPool } from '../config/database.js';
+import { Account } from '../models/Account.js';
+
+const ensureColumn = async (pool, table, column, definition) => {
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = '${table}' AND column_name = '${column}'
+      ) THEN
+        ALTER TABLE ${table} ADD COLUMN ${definition};
+      END IF;
+    END
+    $$;
+  `);
+};
 
 export const createTables = async () => {
   const pool = getPool();
@@ -25,12 +41,15 @@ export const createTables = async () => {
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
         account_number VARCHAR(50) NOT NULL UNIQUE,
+        iban VARCHAR(34) UNIQUE,
         balance DECIMAL(18,2) NOT NULL DEFAULT 0.00,
         account_type VARCHAR(20) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+
+    await ensureColumn(pool, 'accounts', 'iban', 'VARCHAR(34) UNIQUE');
 
     await pool.query(`
       CREATE INDEX IF NOT EXISTS IX_accounts_user_id ON accounts (user_id)
@@ -39,6 +58,13 @@ export const createTables = async () => {
     await pool.query(`
       CREATE INDEX IF NOT EXISTS IX_accounts_account_number ON accounts (account_number)
     `);
+
+    // Backfill IBAN values for legacy accounts
+    const legacyAccounts = await pool.query('SELECT id, account_number FROM accounts WHERE iban IS NULL');
+    for (const account of legacyAccounts.rows) {
+      const generatedIban = Account.generateIban(account.account_number);
+      await pool.query('UPDATE accounts SET iban = $1 WHERE id = $2', [generatedIban, account.id]);
+    }
 
     // Create transactions table
     await pool.query(`
@@ -49,11 +75,14 @@ export const createTables = async () => {
         amount DECIMAL(18,2) NOT NULL,
         type VARCHAR(20) NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'completed',
+        description TEXT NULL,
         timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
         FOREIGN KEY (from_account_id) REFERENCES accounts(id) ON DELETE SET NULL,
         FOREIGN KEY (to_account_id) REFERENCES accounts(id) ON DELETE SET NULL
       )
     `);
+
+    await ensureColumn(pool, 'transactions', 'description', 'TEXT NULL');
 
     await pool.query(`
       CREATE INDEX IF NOT EXISTS IX_transactions_from_account ON transactions (from_account_id)

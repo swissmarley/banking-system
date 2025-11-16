@@ -131,7 +131,7 @@ router.delete('/:id', async (req, res, next) => {
     }
     
     if (parseFloat(account.balance) > 0) {
-      return res.status(400).json({ error: 'Cannot delete account with balance' });
+      return res.status(400).json({ error: 'Account still has funds. Please transfer or withdraw the remaining balance before deleting.' });
     }
     
     const deleted = await Account.delete(req.params.id);

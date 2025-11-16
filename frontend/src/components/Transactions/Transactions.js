@@ -26,7 +26,7 @@ const Transactions = () => {
 
       const response = await apiClient.get('/api/transactions', { params });
       setTransactions(response.data.transactions || []);
-      setPagination(prev => response.data.pagination || prev);
+      setPagination((prev) => response.data.pagination || prev);
       setError('');
     } catch (err) {
       setError('Failed to load transactions');
@@ -40,8 +40,8 @@ const Transactions = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
     setFilters({ ...filters, [name]: value });
     setPagination({ ...pagination, page: 1 });
   };
@@ -60,29 +60,33 @@ const Transactions = () => {
   }
 
   return (
-    <div className="transactions-page">
-      <h1>Transaction History</h1>
+    <div className="transactions-page page-grid">
+      <header className="transactions-header">
+        <div>
+          <p className="eyebrow">Transactions</p>
+          <h1>Comprehensive activity log</h1>
+          <p className="subtitle">
+            Filter and audit every deposit, withdrawal, or transfer completed through your accounts.
+          </p>
+        </div>
+      </header>
+
       {error && <div className="error-message">{error}</div>}
 
-      <div className="filters-card">
+      <section className="panel filters-panel">
         <h2>Filters</h2>
         <div className="filters-grid">
-          <div className="form-group">
-            <label htmlFor="type">Transaction Type</label>
-            <select
-              id="type"
-              name="type"
-              value={filters.type}
-              onChange={handleFilterChange}
-            >
-              <option value="">All Types</option>
+          <label>
+            <span>Type</span>
+            <select id="type" name="type" value={filters.type} onChange={handleFilterChange}>
+              <option value="">All</option>
               <option value="deposit">Deposit</option>
               <option value="withdrawal">Withdrawal</option>
               <option value="transfer">Transfer</option>
             </select>
-          </div>
-          <div className="form-group">
-            <label htmlFor="startDate">Start Date</label>
+          </label>
+          <label>
+            <span>Start date</span>
             <input
               type="date"
               id="startDate"
@@ -90,9 +94,9 @@ const Transactions = () => {
               value={filters.startDate}
               onChange={handleFilterChange}
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="endDate">End Date</label>
+          </label>
+          <label>
+            <span>End date</span>
             <input
               type="date"
               id="endDate"
@@ -100,22 +104,17 @@ const Transactions = () => {
               value={filters.endDate}
               onChange={handleFilterChange}
             />
-          </div>
-          <div className="form-group">
-            <label>&nbsp;</label>
-            <button onClick={clearFilters} className="btn-secondary">
-              Clear Filters
-            </button>
-          </div>
+          </label>
+          <button onClick={clearFilters} className="ghost-button clear-btn">
+            Clear filters
+          </button>
         </div>
-      </div>
+      </section>
 
       {transactions.length === 0 ? (
-        <div className="empty-state">
-          <p>No transactions found.</p>
-        </div>
+        <div className="empty-state">No transactions found.</div>
       ) : (
-        <>
+        <section className="panel">
           <div className="transactions-table-container">
             <table className="transactions-table">
               <thead>
@@ -123,8 +122,9 @@ const Transactions = () => {
                   <th>ID</th>
                   <th>Type</th>
                   <th>Amount</th>
-                  <th>From Account</th>
-                  <th>To Account</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Description</th>
                   <th>Date</th>
                   <th>Status</th>
                 </tr>
@@ -139,13 +139,12 @@ const Transactions = () => {
                       </span>
                     </td>
                     <td className="amount">${parseFloat(transaction.amount).toFixed(2)}</td>
-                    <td>{transaction.from_account_number || 'N/A'}</td>
-                    <td>{transaction.to_account_number || 'N/A'}</td>
+                    <td>{transaction.from_account_number || '—'}</td>
+                    <td>{transaction.to_account_number || '—'}</td>
+                    <td className="description">{transaction.description || '—'}</td>
                     <td>{new Date(transaction.timestamp).toLocaleString()}</td>
                     <td>
-                      <span className={`status ${transaction.status}`}>
-                        {transaction.status}
-                      </span>
+                      <span className={`status ${transaction.status}`}>{transaction.status}</span>
                     </td>
                   </tr>
                 ))}
@@ -158,7 +157,7 @@ const Transactions = () => {
               <button
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="btn-secondary"
+                className="ghost-button"
               >
                 Previous
               </button>
@@ -168,17 +167,16 @@ const Transactions = () => {
               <button
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page >= pagination.pages}
-                className="btn-secondary"
+                className="ghost-button"
               >
                 Next
               </button>
             </div>
           )}
-        </>
+        </section>
       )}
     </div>
   );
 };
 
 export default Transactions;
-

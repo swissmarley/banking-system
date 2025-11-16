@@ -35,28 +35,29 @@ const buildServerList = () => {
   return servers;
 };
 
+const apiDescription = `Complete banking system REST API with JWT authentication, accounts, and transactions.
+
+## Authentication Instructions
+
+1. **Obtain a JWT token**
+   - Call \`POST /api/auth/login\` with your \`email\` and \`password\`.
+   - Or call \`POST /api/auth/register\` to create a new user and receive a token immediately.
+
+2. **Authorize every protected request**
+   - Click the **Authorize** button in Swagger UI and paste your token prefixed with \`Bearer \`.
+   - Alternatively send the HTTP header: \`Authorization: Bearer <token>\`.
+   - All \`/api/*\` routes, except register/login, require this bearer token. Two-factor authentication is not needed.
+
+3. **Token lifetime**
+   - Tokens remain valid for 24 hours. Request a new one by logging in again when you receive a 401.`;
+
 const options = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'Banking System API',
       version: '1.0.0',
-      description: `Complete banking system REST API with authentication, accounts, and transactions
-
-## Authentication Instructions
-
-1. **First, get a JWT token:**
-   - Use \`POST /api/auth/register\` to create a new user, OR
-   - Use \`POST /api/auth/login\` to login with existing credentials
-   - Copy the \`token\` from the response
-
-2. **Authorize in Swagger:**
-   - Click the **"Authorize"** button (🔒) at the top right
-   - In the "Value" field, paste ONLY the token (without "Bearer " prefix)
-   - Click "Authorize" then "Close"
-   - Now you can use all protected endpoints
-
-3. **Token expires after 24 hours** - re-login to get a new token`,
+      description: apiDescription,
       contact: {
         name: 'API Support'
       }
@@ -77,3 +78,4 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
+

@@ -1,223 +1,176 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import TwoFactorChallenge from './TwoFactorChallenge';
 import './Auth.css';
 
 const passwordRequirements = [
-  {
-    id: 'length',
-    label: 'At least 8 characters',
-    message: 'Password must be at least 8 characters long',
-    test: (value) => value.length >= 8
-  },
-  {
-    id: 'uppercase',
-    label: 'Contains an uppercase letter',
-    message: 'Password must contain at least one uppercase letter',
-    test: (value) => /[A-Z]/.test(value)
-  },
-  {
-    id: 'lowercase',
-    label: 'Contains a lowercase letter',
-    message: 'Password must contain at least one lowercase letter',
-    test: (value) => /[a-z]/.test(value)
-  },
-  {
-    id: 'digit',
-    label: 'Contains a number',
-    message: 'Password must contain at least one digit',
-    test: (value) => /[0-9]/.test(value)
-  },
+  { id: 'length', label: 'Min. 8 characters', test: (value) => value.length >= 8 },
+  { id: 'uppercase', label: 'Include uppercase letter', test: (value) => /[A-Z]/.test(value) },
+  { id: 'lowercase', label: 'Include lowercase letter', test: (value) => /[a-z]/.test(value) },
+  { id: 'digit', label: 'Include a digit', test: (value) => /[0-9]/.test(value) },
   {
     id: 'special',
-    label: 'Contains a special character',
-    message: 'Password must contain at least one special character',
+    label: 'Include special character',
     test: (value) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value)
   }
 ];
 
-const RequirementIcon = ({ passed }) => (
-  <svg
-    className={`password-checker-icon ${passed ? 'pass' : 'fail'}`}
-    viewBox="0 0 16 16"
-    aria-hidden="true"
-  >
-    {passed ? (
-      <path
-        d="M3 8.5l3 3L13 5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    ) : (
-      <>
-        <path
-          d="M4 4l8 8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M12 4l-8 8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </>
-    )}
-  </svg>
-);
-
 const Register = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({
+    username: '',
+    email: '',
+    password: ''
+  });
+  const [status, setStatus] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register, twoFactorState, user, cancelTwoFactorFlow } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { register, user, authError } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && twoFactorState.status === 'idle') {
+    if (user) {
       navigate('/dashboard');
     }
-  }, [user, twoFactorState.status, navigate]);
+  }, [user, navigate]);
 
-  const twoFactorActive = useMemo(
-    () => twoFactorState.status !== 'idle',
-    [twoFactorState.status]
-  );
+  useEffect(() => {
+    if (authError) {
+      setStatus({ type: 'error', message: authError });
+    }
+  }, [authError]);
 
   const requirementStatuses = useMemo(
     () =>
       passwordRequirements.map((requirement) => ({
         ...requirement,
-        satisfied: requirement.test(password)
+        satisfied: requirement.test(form.password)
       })),
-    [password]
+    [form.password]
   );
 
-  const validatePassword = (value) => {
-    const failingRequirement = passwordRequirements.find(
-      (requirement) => !requirement.test(value)
-    );
-    return failingRequirement ? failingRequirement.message : null;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError('');
-    setLoading(true);
+    setStatus(null);
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      setLoading(false);
+    const hasError = requirementStatuses.some((req) => !req.satisfied);
+    if (hasError) {
+      setStatus({ type: 'error', message: 'Please meet all password requirements.' });
       return;
     }
 
-    const result = await register(username, email, password);
-    setLoading(false);
+    setSubmitting(true);
+    const result = await register(form.username, form.email, form.password);
+    setSubmitting(false);
 
-    if (!result.success) {
-      setError(result.error);
+    if (result.success) {
+      setStatus({ type: 'success', message: 'Account created! Redirecting…' });
+      navigate('/dashboard');
     } else {
-      setPassword('');
+      setStatus({
+        type: 'error',
+        message: result.error || 'Unable to register with those details.'
+      });
     }
   };
 
-  const handleCancelTwoFactor = () => {
-    cancelTwoFactorFlow();
-    setError('');
-  };
-
-  const cardClasses = `auth-card${twoFactorActive ? ' two-factor-active' : ''}`;
-
   return (
-    <div className="auth-container">
-      <div className={cardClasses}>
-        {twoFactorActive ? (
-          <TwoFactorChallenge onCancel={handleCancelTwoFactor} />
-        ) : (
-          <>
+    <div className="auth-shell">
+      <div className="auth-panel">
+        <div className="auth-panel__intro">
+          <p className="eyebrow">Modern finance OS</p>
+          <h1>
+            Create a <span>JWT-powered</span> profile
+          </h1>
+          <p className="subtitle">
+            Provision a digital bank account, issue IBANs instantly, and manage transfers through a
+            single secure workspace.
+          </p>
+          <ul className="auth-highlights">
+            <li>Unlimited accounts per organization</li>
+            <li>Enterprise-grade access policies</li>
+            <li>Live transaction intelligence dashboard</li>
+          </ul>
+        </div>
+
+        <div className="auth-panel__form">
+          <div className="auth-card">
             <h2>Create account</h2>
-            {error && <div className="error-message">{error}</div>}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="username">Username</label>
+            {status?.message && (
+              <div className={`auth-banner ${status.type}`}>{status.message}</div>
+            )}
+            <form onSubmit={handleSubmit} className="auth-form">
+              <label className="floating-label">
+                <span>Username</span>
                 <input
                   type="text"
-                  id="username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  name="username"
+                  value={form.username}
+                  onChange={handleChange}
+                  placeholder="jane.doe"
                   required
                   minLength={3}
-                  disabled={loading}
-                  autoComplete="username"
+                  disabled={submitting}
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
+              </label>
+              <label className="floating-label">
+                <span>Email</span>
                 <input
                   type="email"
-                  id="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="you@email.com"
                   required
-                  disabled={loading}
-                  autoComplete="email"
+                  disabled={submitting}
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  minLength={8}
-                  disabled={loading}
-                  autoComplete="new-password"
-                />
-                <div className="form-group-inline">
+              </label>
+              <label className="floating-label">
+                <span>Password</span>
+                <div className="password-field">
                   <input
-                    type="checkbox"
-                    id="showPassword"
-                    checked={showPassword}
-                    onChange={(e) => setShowPassword(e.target.checked)}
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    required
+                    minLength={8}
+                    disabled={submitting}
                   />
-                  <label htmlFor="showPassword">Show password</label>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
-                <div className="password-checker" aria-live="polite">
-                  {requirementStatuses.map((requirement) => (
-                    <div
-                      key={requirement.id}
-                      className={`password-checker-item ${
-                        requirement.satisfied ? 'pass' : 'fail'
-                      }`}
-                    >
-                      <RequirementIcon passed={requirement.satisfied} />
-                      <span>{requirement.label}</span>
-                    </div>
-                  ))}
-                </div>
+              </label>
+              <div className="password-meter">
+                {requirementStatuses.map((req) => (
+                  <span
+                    key={req.id}
+                    className={`password-pill ${req.satisfied ? 'pass' : 'fail'}`}
+                  >
+                    {req.label}
+                  </span>
+                ))}
               </div>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Registering...' : 'Register'}
+
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting ? 'Creating profile…' : 'Register & issue token'}
               </button>
             </form>
             <p className="auth-link">
-              Already have an account? <Link to="/login">Login here</Link>
+              Already registered? <Link to="/login">Back to login</Link>
             </p>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,159 +1,115 @@
-.transactions-page h1 {
-  margin-bottom: 2rem;
-  color: #2c3e50;
+.transactions-header h1 {
+  margin: 0.5rem 0;
+  font-size: clamp(2rem, 4vw, 2.4rem);
 }
 
-.filters-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.filters-card h2 {
+.filters-panel h2 {
   margin-bottom: 1rem;
-  color: #2c3e50;
-  font-size: 1.2rem;
 }
 
 .filters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
+  align-items: end;
 }
 
-.form-group {
-  margin-bottom: 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
+.filters-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.form-group select,
-.form-group input[type="date"] {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.btn-secondary {
-  background-color: #95a5a6;
+.filters-grid select,
+.filters-grid input {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
   color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 0.75rem;
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: #7f8c8d;
-}
-
-.btn-secondary:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
+.clear-btn {
+  align-self: center;
+  justify-self: flex-start;
+  padding: 0.6rem 1.25rem;
 }
 
 .transactions-table-container {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
-  margin-bottom: 2rem;
 }
 
 .transactions-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
 }
 
 .transactions-table th,
 .transactions-table td {
   padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-align: left;
-  border-bottom: 1px solid #ddd;
 }
 
 .transactions-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-  position: sticky;
-  top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .transaction-type {
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
   text-transform: capitalize;
-  display: inline-block;
 }
 
 .transaction-type.deposit {
-  background-color: #d4edda;
-  color: #155724;
+  background: rgba(90, 211, 162, 0.2);
+  color: #9ef0cf;
 }
 
 .transaction-type.withdrawal {
-  background-color: #f8d7da;
-  color: #721c24;
+  background: rgba(255, 139, 167, 0.2);
+  color: #ffc8d5;
 }
 
 .transaction-type.transfer {
-  background-color: #d1ecf1;
-  color: #0c5460;
-}
-
-.amount {
-  font-weight: 600;
-  color: #2c3e50;
+  background: rgba(90, 216, 255, 0.2);
+  color: #aee7ff;
 }
 
 .status {
   padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
   text-transform: capitalize;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .status.completed {
-  background-color: #d4edda;
-  color: #155724;
+  color: #7ff2cb;
 }
 
-.status.pending {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status.failed {
-  background-color: #f8d7da;
-  color: #721c24;
+.description {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .pagination {
+  margin-top: 1.25rem;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
-  margin-top: 1rem;
-}
-
-.pagination span {
-  padding: 0.5rem 1rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 @media (max-width: 768px) {
@@ -164,13 +120,4 @@
   .transactions-table {
     font-size: 0.85rem;
   }
-
-  .transactions-table th,
-  .transactions-table td {
-    padding: 0.5rem;
-  }
 }
-
-
-
-
