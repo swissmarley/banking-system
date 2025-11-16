@@ -44,10 +44,16 @@
   font-size: 1rem;
 }
 
-.form-card textarea {
-  min-height: 100px;
-  resize: vertical;
-  grid-column: 1 / -1;
+ .form-card textarea {
+   min-height: 100px;
+   resize: vertical;
+   grid-column: 1 / -1;
+ }
+
+.form-card select option,
+.form-card select optgroup {
+  background: rgba(4, 8, 18, 0.95);
+  color: #fff;
 }
 
 .scheduled-list {

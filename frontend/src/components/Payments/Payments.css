@@ -28,9 +28,15 @@
 }
 
 .payments-page input,
+.payments-page .form-card form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.payments-page input,
 .payments-page select,
 .payments-page textarea {
-  width: 100%;
   padding: 0.85rem 1rem;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -45,12 +51,12 @@
 }
 
 .payments-page textarea {
-  resize: vertical;
   min-height: 100px;
+  resize: vertical;
 }
 
-.payments-page .form-card form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.payments-page select option,
+.payments-page select optgroup {
+  background: rgba(4, 8, 18, 0.95);
+  color: #fff;
 }

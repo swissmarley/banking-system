@@ -139,9 +139,11 @@ const Transactions = () => {
                       </span>
                     </td>
                     <td className="amount">${parseFloat(transaction.amount).toFixed(2)}</td>
-                    <td>{transaction.from_account_number || '—'}</td>
-                    <td>{transaction.to_account_number || '—'}</td>
-                    <td className="description">{transaction.description || '—'}</td>
+                    <td>{transaction.from_display || '—'}</td>
+                    <td>{transaction.to_display || '—'}</td>
+                    <td className="description">
+                      {transaction.reference || transaction.description || '—'}
+                    </td>
                     <td>{new Date(transaction.timestamp).toLocaleString()}</td>
                     <td>
                       <span className={`status ${transaction.status}`}>{transaction.status}</span>
