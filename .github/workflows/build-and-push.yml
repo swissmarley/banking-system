@@ -28,14 +28,12 @@ jobs:
       - name: Create .env file for CI/CD
         run: |
           cat > .env << EOF
-          # CI/CD Environment Variables
           NODE_ENV=production
-          # Add any other required environment variables here
-          DB_HOST=postgres
-          DB_PORT=5432
-          DB_NAME=bankingsystem
-          DB_USER=postgres_username
-          DB_PASSWORD=postgres_password
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'ci-dev-jwt-secret' }}
+          DATA_ENCRYPTION_KEY=${{ secrets.DATA_ENCRYPTION_KEY || 'ci-dev-encryption-key' }}
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS || 'http://localhost:3000' }}
+          EXTERNAL_PAYMENTS_API_KEY=${{ secrets.EXTERNAL_PAYMENTS_API_KEY || 'ci-external-api-key' }}
+          FRONTEND_PUBLIC_API_URL=${{ secrets.FRONTEND_PUBLIC_API_URL || 'http://localhost:8080' }}
           EOF
 
       - name: Cache Docker layers
@@ -53,15 +51,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker images via docker-compose
+      - name: Pull base images
         run: |
-          # Build all services defined in docker-compose.yml
-          docker-compose build
+          docker pull postgres:15-alpine
+          docker pull jc21/nginx-proxy-manager:2.11.3
+
+      - name: Build custom services from docker-compose
+        run: |
+          # Build only services with 'build' section (backend, frontend)
+          docker-compose build backend frontend
+
+      - name: Tag and push images to GHCR
+        run: |
+          # Define services to push (only custom built images)
+          CUSTOM_SERVICES=("backend" "frontend")
           
-          # Get all services from docker-compose.yml
-          SERVICES=$(docker-compose config --services)
-          
-          for SERVICE in $SERVICES; do
+          for SERVICE in "${CUSTOM_SERVICES[@]}"; do
             # Convert service name to lowercase for image name
             IMAGE_NAME=$(echo "$SERVICE" | tr '[:upper:]' '[:lower:]')
             
@@ -70,8 +75,8 @@ jobs:
             GHCR_IMAGE_SHA="${{ env.REGISTRY }}/${{ github.repository }}:${IMAGE_NAME}-${{ github.sha }}"
             
             # Tag images
-            docker tag "${SERVICE}" "$GHCR_IMAGE"
-            docker tag "${SERVICE}" "$GHCR_IMAGE_SHA"
+            docker tag "banking-system_${SERVICE}" "$GHCR_IMAGE"
+            docker tag "banking-system_${SERVICE}" "$GHCR_IMAGE_SHA"
             
             # Push to GHCR
             echo "📦 Pushing $SERVICE to GHCR..."
@@ -88,6 +93,13 @@ jobs:
       - name: Summary
         run: |
           echo "## 🎉 Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Images pushed to: \`${{ env.REGISTRY }}/${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Custom images pushed to: \`${{ env.REGISTRY }}/${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Images Pushed:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`backend-latest\` (\`backend-${{ github.sha }}\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`frontend-latest\` (\`frontend-${{ github.sha }}\`)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ℹ️ Note:" >> $GITHUB_STEP_SUMMARY
+          echo "Base images (postgres:15-alpine, nginx-proxy-manager:2.11.3) are used as-is from Docker Hub" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Branch: \`${{ github.ref }}\`" >> $GITHUB_STEP_SUMMARY
