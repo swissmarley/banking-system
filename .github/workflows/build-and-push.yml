@@ -25,6 +25,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
+      - name: Create .env file for CI/CD
+        run: |
+          cat > .env << EOF
+          # CI/CD Environment Variables
+          NODE_ENV=production
+          # Add any other required environment variables here
+          DB_HOST=postgres
+          DB_PORT=5432
+          DB_NAME=bankingsystem
+          DB_USER=postgres_username
+          DB_PASSWORD=postgres_password
+          EOF
+
       - name: Cache Docker layers
         uses: actions/cache@v3
         with:
